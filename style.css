@@ -995,35 +995,26 @@ body {
 .stock-price-change {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: var(--radius-xs);
-  transition: all 0.2s ease;
+  letter-spacing: -0.2px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  transition: color 0.15s ease;
 }
 
 .stock-price-change.is-up {
   color: #EF4444;
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .stock-price-change.is-down {
   color: #38BDF8;
-  background: rgba(56, 189, 248, 0.14);
-  border: 1px solid rgba(56, 189, 248, 0.35);
 }
 
 .stock-price-change.is-flat {
   color: #94A3B8;
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.stock-price-change i {
-  font-size: 10px;
 }
 
 .jftd-badge-live {

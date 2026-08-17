@@ -1378,12 +1378,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderLiveForecast(rawData, trades, forecast) {
     if (!rawData || rawData.length === 0 || !forecast) return;
 
-    // 0. Update Stock Current Price & Daily Change Badge
+    // 0. Update Stock Current Price & Daily Change (Clean "▲ 6,500 (+2.43%)" format)
     const stockCurrPrice = document.getElementById('stockCurrPrice');
     const stockPriceChange = document.getElementById('stockPriceChange');
-    const stockChangeIcon = document.getElementById('stockChangeIcon');
-    const stockChangeDiff = document.getElementById('stockChangeDiff');
-    const stockChangePct = document.getElementById('stockChangePct');
 
     if (rawData && rawData.length > 0) {
       const n = rawData.length;
@@ -1398,22 +1395,16 @@ document.addEventListener('DOMContentLoaded', () => {
         stockCurrPrice.textContent = `₩ ${Math.round(currentPrice).toLocaleString('ko-KR')}`;
       }
 
-      if (stockPriceChange && stockChangeIcon && stockChangeDiff && stockChangePct) {
+      if (stockPriceChange) {
         if (diff > 0) {
           stockPriceChange.className = 'stock-price-change is-up';
-          stockChangeIcon.className = 'fa-solid fa-arrow-up';
-          stockChangeDiff.textContent = `▲ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')}`;
-          stockChangePct.textContent = `(+${diffPct.toFixed(2)}%)`;
+          stockPriceChange.textContent = `▲ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')} (+${diffPct.toFixed(2)}%)`;
         } else if (diff < 0) {
           stockPriceChange.className = 'stock-price-change is-down';
-          stockChangeIcon.className = 'fa-solid fa-arrow-down';
-          stockChangeDiff.textContent = `▼ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')}`;
-          stockChangePct.textContent = `(${diffPct.toFixed(2)}%)`;
+          stockPriceChange.textContent = `▼ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')} (${diffPct.toFixed(2)}%)`;
         } else {
           stockPriceChange.className = 'stock-price-change is-flat';
-          stockChangeIcon.className = 'fa-solid fa-minus';
-          stockChangeDiff.textContent = '0';
-          stockChangePct.textContent = '(0.00%)';
+          stockPriceChange.textContent = `- 0 (0.00%)`;
         }
       }
     }

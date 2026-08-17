@@ -56,3 +56,4 @@
 | 2026-08-17 | GitHub 원격 저장소(`drbrookskim/buythedip`) 연결 및 최초 릴리즈 Publish 완료 | Git/배포 | `.gitignore`, `README.md` 작성 및 원격 `main` 브랜치 최초 커밋/푸시 완성 |
 | 2026-08-17 | GitHub Pages 웹사이트 배포(Publish) 완료 (`https://drbrookskim.github.io/buythedip/`) | 웹호스팅/배포 | `.nojekyll` 설정, GitHub Pages 빌드 활성화 및 정적 웹 환경 시뮬레이션 폴백 엔진 탑재 |
 | 2026-08-17 | GitHub Pages 정적 웹 환경 차트 렌더링 예외 방어 및 로컬 마스터 DB 자동 검색 수정 | 버그픽스/배포 | `KRX_MASTER_DB` 선언 및 비동기 로딩, HTTP 오류 방어 및 정적 데모 차트 렌더링 정상화 |
+| 2026-08-17 | 서비스 타이틀(NOSTOS: Buy the Dip) 폰트 Space Grotesk Bold(700) 전면 강화 | 브랜딩/타이포 | 메인 로고 및 서브 브랜딩 텍스트 전체에 미래지향적 Space Grotesk Bold 타이포그래피 완벽 적용 |

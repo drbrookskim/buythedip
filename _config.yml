@@ -1,0 +1,6 @@
+include:
+  - .nojekyll
+exclude:
+  - worker
+  - .wrangler
+  - server.py

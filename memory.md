@@ -371,6 +371,11 @@
   - 정적 웹 환경에서도 원활하게 동작하도록 `.nojekyll` 설정 및 `generateRealisticFallbackData` 시뮬레이션 폴백 엔진 탑재.
   - 별도의 서버 구동 없이도 브라우저만으로 2,800+ KRX 종목 탐색, 4대 프리셋 전략 검증, 4종 이평선 토글, 누적 자산 성장 곡선 모달을 누구나 즉시 체험 가능.
 
+### 55. GitHub Pages 정적 웹 환경 차트 렌더링 예외 방어 및 로컬 마스터 DB 연동 (2026-08-17)
+- **차트 미표시 원인 분석 및 완벽 해결**:
+  - 원인: 정적 호스팅 환경에서 Python 백엔드 API(`/api/stock`, `/api/search`) 미존재 시 `KRX_MASTER_DB` 미선언(`ReferenceError`) 및 `response.json()` 파싱 오류로 인한 스크립트 중단 현상.
+  - 해결: `KRX_MASTER_DB` 전역 선언 및 `./krx_stocks.json` 비동기 프리로딩, HTTP 404 안전 처리, 그리고 고정밀 `generateRealisticFallbackData` 시뮬레이션 엔진을 통해 GitHub Pages에서도 메인 캔들 차트, 4대 이평선, 타점 마커, AI 예측선이 오류 없이 100% 즉시 렌더링되도록 수정 완료.
+
 ---
 
 ## 📝 2026-08-09 주요 작업 내역

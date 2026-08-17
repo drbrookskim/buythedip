@@ -55,3 +55,4 @@
 | 2026-08-17 | 누적 자산 성장 곡선 모달 현재 검색 종목 및 전략 실시간 완전 연동 | 백테스팅/모달/UX | 현재 검색 종목명/티커 뱃지, 초기자본/전략최종/단순보유/알파 4열 KPI 및 실시간 반응형 차트 렌더러 완성 |
 | 2026-08-17 | GitHub 원격 저장소(`drbrookskim/buythedip`) 연결 및 최초 릴리즈 Publish 완료 | Git/배포 | `.gitignore`, `README.md` 작성 및 원격 `main` 브랜치 최초 커밋/푸시 완성 |
 | 2026-08-17 | GitHub Pages 웹사이트 배포(Publish) 완료 (`https://drbrookskim.github.io/buythedip/`) | 웹호스팅/배포 | `.nojekyll` 설정, GitHub Pages 빌드 활성화 및 정적 웹 환경 시뮬레이션 폴백 엔진 탑재 |
+| 2026-08-17 | GitHub Pages 정적 웹 환경 차트 렌더링 예외 방어 및 로컬 마스터 DB 자동 검색 수정 | 버그픽스/배포 | `KRX_MASTER_DB` 선언 및 비동기 로딩, HTTP 오류 방어 및 정적 데모 차트 렌더링 정상화 |

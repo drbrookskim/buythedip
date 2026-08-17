@@ -29,6 +29,40 @@ except Exception as e:
 STOCK_BY_CODE = {item['code']: item for item in STOCK_DATABASE}
 STOCK_BY_NAME = {item['name'].lower(): item for item in STOCK_DATABASE}
 
+def fetch_korean_stock_naver(code, count=250):
+    try:
+        import urllib.request
+        import xml.etree.ElementTree as ET
+        url = f"https://fchart.stock.naver.com/sise.nhn?symbol={code}&timeframe=day&count={count}&requestType=0"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'})
+        with urllib.request.urlopen(req, timeout=4) as res:
+            xml_data = res.read().decode('euc-kr', errors='ignore')
+        root = ET.fromstring(xml_data)
+        items = root.findall('.//item')
+        data = []
+        for it in items:
+            parts = it.get('data', '').split('|')
+            if len(parts) >= 6:
+                dt = f"{parts[0][:4]}-{parts[0][4:6]}-{parts[0][6:8]}"
+                o = float(parts[1])
+                h = float(parts[2])
+                l = float(parts[3])
+                c = float(parts[4])
+                v = int(parts[5])
+                if o > 0 and h > 0 and l > 0 and c > 0:
+                    data.append({
+                        'date': dt,
+                        'open': round(o, 2),
+                        'high': round(h, 2),
+                        'low': round(l, 2),
+                        'close': round(c, 2),
+                        'volume': v
+                    })
+        return data if len(data) > 0 else None
+    except Exception as e:
+        print(f"[Naver Finance Fetch] Notice: {e}")
+        return None
+
 class StockSimHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         # Properly unquote and decode UTF-8 URL paths and queries
@@ -147,8 +181,30 @@ class StockSimHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 symbol = symbol_raw
 
+            # 1. Try fast real-time Korean market data (Naver Finance) for 6-digit KRX symbols
+            if symbol_raw.isdigit() and len(symbol_raw) == 6:
+                korean_data = fetch_korean_stock_naver(symbol_raw, period_days)
+                if korean_data and len(korean_data) > 0:
+                    db_item = next((item for item in STOCK_DATABASE if item['code'] == symbol_raw), None)
+                    stock_name = db_item['name'] if db_item else symbol_raw
+                    ticker_name = db_item['ticker'] if db_item else f"{symbol_raw}.KS"
+                    
+                    response_payload = {
+                        'symbol': symbol_raw,
+                        'ticker': ticker_name,
+                        'name': stock_name,
+                        'count': len(korean_data),
+                        'data': korean_data
+                    }
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(response_payload, ensure_ascii=False, allow_nan=False).encode('utf-8'))
+                    return
+
             try:
-                # Fetch real historical data using yfinance
+                # 2. Fallback or Global Stock real historical data via yfinance
                 ticker = yf.Ticker(symbol)
                 fetch_days = int(period_days * 1.5) + 30
                 end_date = datetime.now()

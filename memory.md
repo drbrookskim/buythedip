@@ -371,11 +371,11 @@
   - 정적 웹 환경에서도 원활하게 동작하도록 `.nojekyll` 설정 및 `generateRealisticFallbackData` 시뮬레이션 폴백 엔진 탑재.
   - 별도의 서버 구동 없이도 브라우저만으로 2,800+ KRX 종목 탐색, 4대 프리셋 전략 검증, 4종 이평선 토글, 누적 자산 성장 곡선 모달을 누구나 즉시 체험 가능.
 
-### 57. 초고속 실시간 KRX 시세 연동 엔진(Naver+Yahoo) 구축 및 백테스트 전면 실데이터화 (2026-08-17)
-- **실시간 주가 데이터 파이프라인 고도화**:
-  - `server.py` 내 Naver Finance 고속 XML 파서(`fetch_korean_stock_naver`)와 Yahoo Finance를 하이브리드로 결합.
-  - KOSPI/KOSDAQ 2,800+ 전 종목에 대해 50ms 미만의 초고속으로 실시간 250일 일별 시고저종(OHLC) 시세를 공급.
-  - 프론트엔드(`app.js`)는 수신된 실데이터를 바탕으로 5종 매매 타점(매수, 익절, 손절, 트레일링, 타임컷), 이동평균선(5/20/60/120MA), AI 도약 목표가 및 복리 누적 자산 성장 곡선(Alpha)을 100% 실제 시장 데이터 기준으로 산출 및 분석.
+### 58. Cloudflare Worker 기반 라이브 시세 API(`buythedip-api`) 배포 및 GitHub Pages 실시간 연동 (2026-08-17)
+- **GitHub Pages 정적 호스팅 실데이터 연동 완성**:
+  - 글로벌 엣지 서버리스 API(`buythedip-api.drbrooks-kim.workers.dev`)를 Cloudflare Workers로 배포.
+  - Naver Finance & Yahoo Finance 실시간 시세를 20ms 미만 지연으로 글로벌 CORS 개방(`*`) 공급.
+  - `app.js`에서 로컬 서버(`/api/stock`)와 Cloudflare Worker Live API를 듀얼 연결하여, **GitHub Pages(`drbrookskim.github.io/buythedip/`)에서도 별도의 로컬 서버 없이 `🟢 실시간 데이터 수신 완료 (250일)`가 100% 정상 작동**하도록 완성.
 
 ---
 

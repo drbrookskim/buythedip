@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Settings
   const initialCapitalInput = document.getElementById('initialCapital');
+  const initialCapitalSelect = document.getElementById('initialCapitalSelect');
   const timeframeSelect = document.getElementById('timeframe');
+  const estimationBtn = document.getElementById('estimationBtn');
   const toggleCustomSettingsBtn = document.getElementById('toggleCustomSettingsBtn');
   const customSettingsDrawer = document.getElementById('customSettingsDrawer');
   const toggleArrow = document.querySelector('.toggle-arrow');
@@ -217,65 +219,39 @@ document.addEventListener('DOMContentLoaded', () => {
   renderRecentSearches();
 
   // -------------------------------------------------------------
-  // Initial Capital & Timeframe Formatter & Quick Chips
+  // Initial Capital, Timeframe & Estimation CTA Listeners
   // -------------------------------------------------------------
-  const capChips = document.querySelectorAll('.btn-cap-chip');
-  capChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      capChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      const attrAmount = chip.getAttribute('data-amount');
-      if (attrAmount === '10x') {
+  if (initialCapitalSelect) {
+    initialCapitalSelect.addEventListener('change', () => {
+      const selVal = initialCapitalSelect.value;
+      if (selVal === '10x') {
         if (cachedRawData && cachedRawData.length > 0) {
           const lastClose = cachedRawData[cachedRawData.length - 1].close;
           const default10x = Math.round(lastClose * 10);
           initialCapitalInput.value = default10x.toLocaleString('ko-KR');
         }
       } else {
-        const amount = Number(attrAmount);
+        const amount = Number(selVal);
         initialCapitalInput.value = amount.toLocaleString('ko-KR');
       }
       runSimulation();
     });
-  });
+  }
 
-  initialCapitalInput.addEventListener('input', (e) => {
-    const rawVal = e.target.value.replace(/[^0-9]/g, '');
-    e.target.value = rawVal ? Number(rawVal).toLocaleString('ko-KR') : '';
-    capChips.forEach(c => {
-      const chipAmt = c.getAttribute('data-amount');
-      if (chipAmt === '10x') {
-        if (cachedRawData && cachedRawData.length > 0) {
-          const lastClose = cachedRawData[cachedRawData.length - 1].close;
-          c.classList.toggle('active', Number(rawVal) === Math.round(lastClose * 10));
-        } else {
-          c.classList.remove('active');
-        }
-      } else {
-        c.classList.toggle('active', Number(chipAmt) === Number(rawVal));
-      }
+  if (timeframeSelect) {
+    timeframeSelect.addEventListener('change', () => {
+      runSimulation();
     });
-  });
+  }
 
-  initialCapitalInput.addEventListener('change', () => {
-    if (!initialCapitalInput.value.trim() && cachedRawData && cachedRawData.length > 0) {
-      const lastClose = cachedRawData[cachedRawData.length - 1].close;
-      initialCapitalInput.value = Math.round(lastClose * 10).toLocaleString('ko-KR');
-    }
-    runSimulation();
-  });
-
-  initialCapitalInput.addEventListener('blur', (e) => {
-    if (!e.target.value.trim() && cachedRawData && cachedRawData.length > 0) {
-      const lastClose = cachedRawData[cachedRawData.length - 1].close;
-      e.target.value = Math.round(lastClose * 10).toLocaleString('ko-KR');
-    }
-    runSimulation();
-  });
-
-  initialCapitalInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') runSimulation();
-  });
+  if (estimationBtn) {
+    estimationBtn.addEventListener('click', () => {
+      estimationBtn.classList.remove('leonardo-pulse');
+      void estimationBtn.offsetWidth;
+      estimationBtn.classList.add('leonardo-pulse');
+      runSimulation();
+    });
+  }
 
   clearSearchInputBtn.addEventListener('click', () => {
     stockSearchInput.value = '';
@@ -876,14 +852,13 @@ document.addEventListener('DOMContentLoaded', () => {
       cachedSymbol = symbol;
       cachedDays = numDays;
 
-      // On new stock selection or initial load, auto-set default capital to 10x current stock price
-      if (isNewStock) {
+      // On new stock selection or initial load, auto-set default capital to 10x current stock price if 10x selected
+      if (initialCapitalSelect && initialCapitalSelect.value === '10x') {
         const lastClose = rawData[rawData.length - 1].close;
         const default10xCapital = Math.round(lastClose * 10);
         initialCapitalInput.value = default10xCapital.toLocaleString('ko-KR');
-        capChips.forEach(c => {
-          c.classList.toggle('active', c.getAttribute('data-amount') === '10x');
-        });
+      } else if (initialCapitalSelect && initialCapitalSelect.value !== '10x') {
+        initialCapitalInput.value = Number(initialCapitalSelect.value).toLocaleString('ko-KR');
       }
     }
 
@@ -2680,7 +2655,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pointer-Position-Aware Radial Fill Animation for Pill Buttons
   // -------------------------------------------------------------
   function setupPointerFillAnimation() {
-    const selector = '.btn-cap-chip, .legend-filter-btn, .tab-filter, .btn-chart-ctrl, .btn-primary, .recent-chip, .btn-preset, .btn-gear-circle, .kpi-pill, .preset-tag, .pill-sub, .forecast-prob-badge';
+    const selector = '.btn-estimation, #estimationBtn, .legend-filter-btn, .tab-filter, .btn-chart-ctrl, .btn-primary, .recent-chip, .btn-preset, .btn-gear-circle, .kpi-pill, .preset-tag, .pill-sub, .forecast-prob-badge';
 
     function updateCoords(e) {
       const btn = e.target.closest(selector);
@@ -2703,7 +2678,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Leonardo.ai Style Button Click Shockwave Pulse Trigger
   // -------------------------------------------------------------
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-primary, .btn-leonardo, #runSimBtn, #chartEquityModalBtn, #fullscreenToggleBtn');
+    const btn = e.target.closest('.btn-primary, .btn-leonardo, .btn-estimation, #estimationBtn, #runSimBtn, #chartEquityModalBtn, #fullscreenToggleBtn');
     if (!btn) return;
     btn.classList.remove('leonardo-pulse');
     // Force reflow

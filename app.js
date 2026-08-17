@@ -685,6 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sma120 = calculateSMA(closes, 120);
       const rsi14 = calculateRSI(closes, 14);
       const bollingerLower = calculateBollingerLower(closes, 20, 2);
+      const atr14 = calculateATR(rawData, 14);
 
       for (let i = 0; i < rawData.length; i++) {
         rawData[i].sma5 = sma5[i];
@@ -693,6 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rawData[i].sma120 = sma120[i];
         rawData[i].rsi = rsi14[i];
         rawData[i].bollingerLower = bollingerLower[i];
+        rawData[i].atr = atr14[i];
       }
 
       return rawData;
@@ -783,6 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sma120 = calculateSMA(closes, 120);
     const rsi14 = calculateRSI(closes, 14);
     const bollingerLower = calculateBollingerLower(closes, 20, 2);
+    const atr14 = calculateATR(rawData, 14);
 
     for (let i = 0; i < rawData.length; i++) {
       rawData[i].sma5 = sma5[i];
@@ -791,6 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
       rawData[i].sma120 = sma120[i];
       rawData[i].rsi = rsi14[i];
       rawData[i].bollingerLower = bollingerLower[i];
+      rawData[i].atr = atr14[i];
     }
 
     return rawData;
@@ -854,6 +858,41 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return lower;
+  }
+
+  function calculateATR(rawData, period = 14) {
+    const atr = new Array(rawData.length).fill(null);
+    if (!rawData || rawData.length < period) return atr;
+
+    const tr = [];
+    for (let i = 0; i < rawData.length; i++) {
+      if (i === 0) {
+        tr.push((rawData[i].high || rawData[i].close) - (rawData[i].low || rawData[i].close));
+      } else {
+        const high = rawData[i].high || rawData[i].close;
+        const low = rawData[i].low || rawData[i].close;
+        const prevClose = rawData[i - 1].close;
+        const currentTR = Math.max(
+          high - low,
+          Math.abs(high - prevClose),
+          Math.abs(low - prevClose)
+        );
+        tr.push(currentTR);
+      }
+    }
+
+    let sumTR = 0;
+    for (let i = 0; i < period; i++) {
+      sumTR += tr[i];
+    }
+    let currentATR = sumTR / period;
+    atr[period - 1] = Math.round(currentATR * 100) / 100;
+
+    for (let i = period; i < rawData.length; i++) {
+      currentATR = (currentATR * (period - 1) + tr[i]) / period;
+      atr[i] = Math.round(currentATR * 100) / 100;
+    }
+    return atr;
   }
 
   let cachedRawData = null;
@@ -1061,6 +1100,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // Dynamic Multi-Dimensional Tactical Commentary Generator
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Dynamic Multi-Dimensional Tactical Commentary Generator
+  // -------------------------------------------------------------
   function generateTacticalCommentary(params) {
     const {
       stockTitleText,
@@ -1078,6 +1120,14 @@ document.addEventListener('DOMContentLoaded', () => {
       targetChangePct,
       expectedEntry,
       stopLoss,
+      deltaRisk,
+      riskPct,
+      target1Price,
+      target1ChangePct,
+      target2Price,
+      target2ChangePct,
+      currentATR,
+      swingHigh,
       tpPct,
       slPct,
       maxHoldDaysVal,
@@ -1135,24 +1185,24 @@ document.addEventListener('DOMContentLoaded', () => {
       rsiDesc = `RSI(${rsi.toFixed(1)}) 중립 범위에서 균형을 이루고 있습니다`;
     }
 
-    let indicatorSentence = `기술적으로는 ${volDesc} ${rsiDesc}. 최근 20일 최고가(₩ ${Math.round(recentHigh).toLocaleString()}) 대비 <strong>${dropFromHigh.toFixed(1)}%</strong>의 ${dropFromHigh <= -8 ? '깊은 가격 조정' : '적정 수준의 되돌림'}을 보인 상태입니다.`;
+    let indicatorSentence = `기술적으로는 ${volDesc} ${rsiDesc}. 최근 20일 최고가(₩ ${Math.round(recentHigh).toLocaleString()}) 대비 <strong>${dropFromHigh.toFixed(1)}%</strong>의 ${dropFromHigh <= -8 ? '깊은 가격 조정' : '적정 수준의 되돌림'}을 보인 상태입니다 (14일 ATR: ₩ ${Math.round(currentATR).toLocaleString()}).`;
 
-    // 3. Quantitative Backtest & Action Plan Sentence
+    // 3. Quantitative Backtest & Action Plan Sentence with Framework
     let backtestSentence = '';
     if (trades && trades.length > 0) {
       const winCount = trades.filter(t => t.returnPct > 0).length;
       const winRate = ((winCount / trades.length) * 100).toFixed(1);
       const avgReturn = (trades.reduce((s, t) => s + t.returnPct, 0) / trades.length).toFixed(1);
-      backtestSentence = `과거 1년간 백테스팅 분석 결과 총 <strong>${trades.length}회</strong>의 신호 중 <strong>${winCount}회</strong> 익절(승률 <strong>${winRate}%</strong>, 평균 손익률 <strong>${avgReturn >= 0 ? '+' : ''}${avgReturn}%</strong>)을 기록하였습니다. `;
+      backtestSentence = `과거 백테스팅 분석 결과 총 <strong>${trades.length}회</strong>의 신호 중 <strong>${winCount}회</strong> 익절(승률 <strong>${winRate}%</strong>, 평균 손익률 <strong>${avgReturn >= 0 ? '+' : ''}${avgReturn}%</strong>)을 기록하였습니다. `;
     }
 
     let actionPlanSentence = '';
     if (direction === 'BULLISH') {
-      actionPlanSentence = `<strong>${Math.min(5, maxHoldDaysVal)}영업일 이내 목표 매도가 ₩ ${targetPrice.toLocaleString()} (+${targetChangePct.toFixed(1)}%)</strong> 도달 확률이 <strong>${probScore}%</strong>로 산출되었으므로, 예상 매수가(₩ ${expectedEntry.toLocaleString()}) 부근 1차 40% 분할 매수 후 손절 방어선(₩ ${stopLoss.toLocaleString()}, -${slPct.toFixed(1)}%)을 엄수하는 전략이 유효합니다.`;
+      actionPlanSentence = `정량 프레임워크 기준, <strong>예상 매수가 ₩ ${expectedEntry.toLocaleString()}</strong> 진입 시 손절 방어선은 1.5×ATR 변동성을 반영한 <strong>₩ ${stopLoss.toLocaleString()} (-${riskPct.toFixed(1)}%, 리스크 ₩ ${deltaRisk.toLocaleString()})</strong>입니다. 손익비 1:2.0 달성 지점인 <strong>1차 목표가 ₩ ${target1Price.toLocaleString()} (+${target1ChangePct.toFixed(1)}%)</strong>에서 50% 분할 익절하고, 잔여 수량은 전고점 및 <strong>2차 목표가 ₩ ${target2Price.toLocaleString()} (+${target2ChangePct.toFixed(1)}%)</strong>까지 추세 추종하는 전략이 유효합니다.`;
     } else if (direction === 'BEARISH') {
-      actionPlanSentence = `하방 압력이 지속될 경우 <strong>${Math.min(5, maxHoldDaysVal)}영업일 이내 하방 위험가 ₩ ${targetPrice.toLocaleString()} (${targetChangePct.toFixed(1)}%)</strong>까지 추가 하락할 위험이 <strong>${100 - probScore}%</strong>에 달합니다. 지지선 확인 전까지 신규 매수를 자제하고, 손절선(₩ ${stopLoss.toLocaleString()}) 이탈 시 리스크 관리(비중 축소)를 권장합니다.`;
+      actionPlanSentence = `하방 압력이 지속될 경우 <strong>하방 위험가 ₩ ${targetPrice.toLocaleString()} (${targetChangePct.toFixed(1)}%)</strong>까지 추가 이탈할 위험이 <strong>${100 - probScore}%</strong>에 달합니다. 1.5×ATR 방어선(₩ ${stopLoss.toLocaleString()}) 이탈 시 리스크 관리(비상 탈출 및 비중 축소)를 우선 권장합니다.`;
     } else {
-      actionPlanSentence = `현재는 상·하방 방향성이 수렴 중이므로, <strong>₩ ${expectedEntry.toLocaleString()}</strong> 지지력과 20일선 안착 여부를 먼저 확인한 뒤, 단기 목표가 ₩ ${targetPrice.toLocaleString()} / 손절 방어선 ₩ ${stopLoss.toLocaleString()} 범위 내에서 보수적인 분할 진입을 권장합니다.`;
+      actionPlanSentence = `현재는 상·하방 수렴 중이므로, 20일선(₩ ${Math.round(sma20).toLocaleString()}) 안착 확인 후 <strong>₩ ${expectedEntry.toLocaleString()}</strong> 부근에서 1차 목표가 ₩ ${target1Price.toLocaleString()} / 손절선 ₩ ${stopLoss.toLocaleString()} 범위 내에서 보수적인 분할 진입을 권장합니다.`;
     }
 
     return `${trendSentence}<br><br>${indicatorSentence}<br><br>${backtestSentence}${actionPlanSentence}`;
@@ -1170,6 +1220,14 @@ document.addEventListener('DOMContentLoaded', () => {
         targetChangePct: 6.0,
         expectedEntry: 0,
         stopLoss: 0,
+        deltaRisk: 0,
+        riskPct: 3.0,
+        target1Price: 0,
+        target1ChangePct: 6.0,
+        target2Price: 0,
+        target2ChangePct: 10.5,
+        currentATR: 0,
+        swingHigh: 0,
         probLevel: '강력 눌림목 반등 구간',
         levelClass: 'level-strong-buy',
         reboundTag: '단기 반등 유효',
@@ -1267,23 +1325,60 @@ document.addEventListener('DOMContentLoaded', () => {
     let forecastBg = 'rgba(0, 217, 146, 0.20)';
     let forecastLabel = '';
 
-    // Support Entry & Stop Loss
-    let expectedEntry = Math.min(lastClose, Math.round(sma20 * 0.995));
-    if (expectedEntry <= 0 || lastClose < sma20) expectedEntry = Math.round(Math.min(lastClose, sma60 * 0.995));
+    // -------------------------------------------------------------
+    // Quantitative Price Framework Calculation (정량적 산출 공식)
+    // 1. 매수가 (P_buy): MA20 지지 반등 확인 종가 또는 이평선 근접가
+    // 2. 손절가 (P_stop): P_buy - (1.5 * ATR14) (ATR 변동성 방어 방식 권장)
+    // 3. 리스크 범위 (ΔRisk): P_buy - P_stop
+    // 4. 1차 목표가 (P_target1): P_buy + (2.0 * ΔRisk) [손익비 1:2.0 정량 익절]
+    // 5. 2차 목표가 (P_target2): max(P_buy + 3.0 * ΔRisk, Swing High 전고점)
+    // -------------------------------------------------------------
+    const currentATR = (lastBar && lastBar.atr) ? lastBar.atr : Math.round(lastClose * 0.025);
+
+    // Swing High (최근 60거래일 전고점)
+    const lookbackSwing = Math.min(60, rawData.length);
+    const recentSwingSlice = rawData.slice(rawData.length - lookbackSwing);
+    const swingHigh = Math.max(...recentSwingSlice.map(d => d.high || d.close));
+
+    // 1) 매수가 (P_buy)
+    let expectedEntry = Math.round(sma20 > 0 ? sma20 : lastClose);
+    if (lastBar.close >= lastBar.open && isAbove20) {
+      expectedEntry = lastClose; // 당일 양봉 전환 지지 종가 진입
+    } else if (isAbove20 && Math.abs(lastClose - sma20) / sma20 <= 0.03) {
+      expectedEntry = lastClose; // 20일선 근접가 진입
+    }
     if (expectedEntry <= 0) expectedEntry = lastClose;
 
-    const stopLoss = Math.round(lastClose * (1 - slPct / 100));
+    // 2) 손절가 (P_stop - 방식 B ATR 1.5배 변동성 방어)
+    let stopLoss = Math.round(expectedEntry - (1.5 * currentATR));
+    // 방식 A 폴백 / 보정 (이평선 비율 방식 MA20 * (1 - delta) 또는 slPct)
+    if (stopLoss >= expectedEntry || stopLoss <= 0) {
+      stopLoss = Math.round(expectedEntry * (1 - (slPct || 3.0) / 100));
+    }
+
+    // 3) 리스크 범위 (ΔRisk)
+    const deltaRisk = Math.max(Math.round(expectedEntry * 0.008), expectedEntry - stopLoss);
+    const riskPct = ((expectedEntry - stopLoss) / expectedEntry) * 100;
+
+    // 4) 1차 목표가 (P_target1 - 50% 분할 매도, 손익비 1:2.0)
+    const target1Price = Math.round(expectedEntry + (2.0 * deltaRisk));
+    const target1ChangePct = ((target1Price - expectedEntry) / expectedEntry) * 100;
+
+    // 5) 2차 목표가 (P_target2 - 잔량 추세 매도, 손익비 1:3.0 또는 전고점)
+    const target2Price = Math.max(Math.round(expectedEntry + (3.0 * deltaRisk)), Math.round(swingHigh));
+    const target2ChangePct = ((target2Price - expectedEntry) / expectedEntry) * 100;
+
     const stockTitleText = chartSymbolName ? chartSymbolName.textContent : '해당 종목';
     let commentary = '';
 
     if (probScore >= 58) {
       // 🟢 [상승 반등 시나리오]
       direction = 'BULLISH';
-      targetChangePct = tpPct;
-      targetPrice = Math.round(lastClose * (1 + tpPct / 100));
+      targetChangePct = target1ChangePct;
+      targetPrice = target1Price;
       forecastColor = '#00D992';
       forecastBg = 'rgba(0, 217, 146, 0.20)';
-      forecastLabel = `⚡ AI 도약 반등 경로 (+${tpPct.toFixed(1)}%)`;
+      forecastLabel = `⚡ AI 도약 반등 경로 (1차 +${target1ChangePct.toFixed(1)}%)`;
 
       if (probScore >= 75) {
         probLevel = '강력 눌림목 반등 구간';
@@ -1297,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (probScore < 45) {
       // 🔴 [하락 이탈 / 지지 붕괴 시나리오]
       direction = 'BEARISH';
-      const expectedDropPct = Math.max(slPct * 1.3, 4.5);
+      const expectedDropPct = Math.max(riskPct * 1.3, 4.5);
       targetChangePct = -expectedDropPct;
       targetPrice = Math.round(lastClose * (1 - expectedDropPct / 100));
       forecastColor = '#EF4444';
@@ -1316,12 +1411,12 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       // 🟡 [중립 횡보 / 박스권 조정 시나리오]
       direction = 'NEUTRAL';
-      const slightChange = 0.5;
+      const slightChange = target1ChangePct * 0.4;
       targetChangePct = slightChange;
       targetPrice = Math.round(lastClose * (1 + slightChange / 100));
       forecastColor = '#FB923C';
       forecastBg = 'rgba(251, 146, 60, 0.20)';
-      forecastLabel = `⏸️ AI 횡보 지지 테스트 (±${slPct.toFixed(1)}%)`;
+      forecastLabel = `⏸️ AI 횡보 지지 테스트 (±${riskPct.toFixed(1)}%)`;
 
       probLevel = '중립 관망 / 지지력 테스트';
       levelClass = 'level-neutral';
@@ -1345,6 +1440,14 @@ document.addEventListener('DOMContentLoaded', () => {
       targetChangePct,
       expectedEntry,
       stopLoss,
+      deltaRisk,
+      riskPct,
+      target1Price,
+      target1ChangePct,
+      target2Price,
+      target2ChangePct,
+      currentATR,
+      swingHigh,
       tpPct,
       slPct,
       maxHoldDaysVal,
@@ -1364,9 +1467,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (direction === 'BULLISH') {
       actionClass = 'action-bullish';
       entryAction = `<i class="fa-solid fa-crosshairs"></i> <span>1차 40% 분할 매수 대기</span>`;
-      tpAction = `<i class="fa-solid fa-coins"></i> <span>도달 시 50% 분할 익절</span>`;
-      slAction = `<i class="fa-solid fa-ban"></i> <span>종가 이탈 시 기계적 손절</span>`;
-      horizonAction = `<i class="fa-solid fa-stopwatch"></i> <span>목표 도달 시 잔여분 트레일링</span>`;
+      tpAction = `<i class="fa-solid fa-coins"></i> <span>1차 도달 시 50% 분할 익절</span>`;
+      slAction = `<i class="fa-solid fa-ban"></i> <span>1.5×ATR 이탈 시 기계적 손절</span>`;
+      horizonAction = `<i class="fa-solid fa-stopwatch"></i> <span>목표 도달 시 2차 트레일링</span>`;
     } else if (direction === 'BEARISH') {
       actionClass = 'action-bearish';
       entryAction = `<i class="fa-solid fa-triangle-exclamation"></i> <span>신규 매수 금지 / 하방 관망</span>`;
@@ -1388,6 +1491,14 @@ document.addEventListener('DOMContentLoaded', () => {
       targetChangePct,
       expectedEntry,
       stopLoss,
+      deltaRisk,
+      riskPct,
+      target1Price,
+      target1ChangePct,
+      target2Price,
+      target2ChangePct,
+      currentATR,
+      swingHigh,
       probLevel,
       levelClass,
       reboundTag,
@@ -1458,6 +1569,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const forecastTpLabel = document.getElementById('forecastTpLabel');
     const forecastTpVal = document.getElementById('forecastTpVal');
     const forecastTpPct = document.getElementById('forecastTpPct');
+    const forecastSlLabel = document.getElementById('forecastSlLabel');
     const forecastSlVal = document.getElementById('forecastSlVal');
     const forecastSlPct = document.getElementById('forecastSlPct');
     const forecastHorizonVal = document.getElementById('forecastHorizonVal');
@@ -1477,10 +1589,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (forecastEntryVal) forecastEntryVal.textContent = `₩ ${forecast.expectedEntry.toLocaleString()}`;
     if (forecastEntryLabel) forecastEntryLabel.textContent = forecast.direction === 'BEARISH' ? '예상 하방 지지선' : '예상 매수가';
-    if (forecastEntryTag) forecastEntryTag.textContent = forecast.lastClose <= forecast.sma20 ? '20일선 하회 눌림' : '20일선 근접 지지';
+    if (forecastEntryTag) forecastEntryTag.textContent = forecast.lastClose <= forecast.sma20 ? '20일선 하회 눌림' : '20일선 지지 반등';
 
     if (forecastTpLabel) {
-      forecastTpLabel.textContent = forecast.direction === 'BEARISH' ? '하방 경보 목표가' : (forecast.direction === 'BULLISH' ? '목표 매도가' : '예상 횡보가');
+      forecastTpLabel.textContent = forecast.direction === 'BEARISH' ? '하방 경보 목표가' : (forecast.direction === 'BULLISH' ? '1차 목표가 (1:2.0)' : '예상 횡보가');
     }
     if (forecastTpIcon) {
       if (forecast.direction === 'BEARISH') {
@@ -1496,12 +1608,22 @@ document.addEventListener('DOMContentLoaded', () => {
       forecastTpVal.className = `pill-val ${forecast.direction === 'BEARISH' ? 'text-rose' : (forecast.direction === 'BULLISH' ? 'text-cobalt' : 'text-amber')}`;
     }
     if (forecastTpPct) {
-      forecastTpPct.textContent = `${forecast.targetChangePct >= 0 ? '+' : ''}${forecast.targetChangePct.toFixed(1)}%`;
+      if (forecast.direction === 'BULLISH' && forecast.target2Price) {
+        forecastTpPct.textContent = `+${forecast.targetChangePct.toFixed(1)}% (2차: ₩${forecast.target2Price.toLocaleString()})`;
+      } else {
+        forecastTpPct.textContent = `${forecast.targetChangePct >= 0 ? '+' : ''}${forecast.targetChangePct.toFixed(1)}%`;
+      }
       forecastTpPct.className = `pill-sub ${forecast.direction === 'BEARISH' ? 'text-rose' : (forecast.direction === 'BULLISH' ? 'text-cobalt' : 'text-amber')}`;
     }
 
+    if (forecastSlLabel) {
+      forecastSlLabel.textContent = '손절 방어선 (1.5 ATR)';
+    }
     if (forecastSlVal) forecastSlVal.textContent = `₩ ${forecast.stopLoss.toLocaleString()}`;
-    if (forecastSlPct) forecastSlPct.textContent = `-${forecast.slPct.toFixed(1)}%`;
+    if (forecastSlPct) {
+      const riskVal = forecast.riskPct !== undefined ? forecast.riskPct : forecast.slPct;
+      forecastSlPct.textContent = `-${riskVal.toFixed(1)}% (리스크: ₩${(forecast.deltaRisk || 0).toLocaleString()})`;
+    }
 
     if (forecastHorizonVal) forecastHorizonVal.textContent = `${Math.max(2, Math.round(forecast.maxHoldDaysVal * 0.5))}~${forecast.maxHoldDaysVal}일`;
     if (forecastReboundTag) {

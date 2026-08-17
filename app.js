@@ -92,6 +92,20 @@ document.addEventListener('DOMContentLoaded', () => {
   let priceChartInstance = null;
   let equityChartInstance = null;
   let latestEquityData = null;
+  let KRX_MASTER_DB = [];
+
+  // Asynchronously load KRX Master Database for frontend autocomplete & fallback
+  async function loadMasterDB() {
+    try {
+      const res = await fetch('./krx_stocks.json');
+      if (res.ok) {
+        KRX_MASTER_DB = await res.json();
+      }
+    } catch (e) {
+      console.warn("Could not load local krx_stocks.json:", e);
+    }
+  }
+  loadMasterDB();
 
   // AI Presets mapping
   const PRESETS = {
@@ -299,13 +313,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function fetchSearchResults(query) {
+    if (!query) return;
     try {
       const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) return;
-      const data = await response.json();
-      renderSearchResults(data.results || []);
+      if (response.ok) {
+        const data = await response.json();
+        renderSearchResults(data.results || []);
+        return;
+      }
     } catch (err) {
-      console.error("Search error:", err);
+      // API not available, proceed to local search
+    }
+
+    // Local in-memory search from KRX_MASTER_DB
+    if (KRX_MASTER_DB && KRX_MASTER_DB.length > 0) {
+      const q = query.toLowerCase().trim();
+      const matched = KRX_MASTER_DB.filter(item => 
+        (item.name && item.name.toLowerCase().includes(q)) || 
+        (item.code && item.code.includes(q)) ||
+        (item.choseong && item.choseong.includes(q))
+      ).slice(0, 15);
+      renderSearchResults(matched);
     }
   }
 
@@ -585,8 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}&days=${numDays}`);
       if (!response.ok) {
-        const errJson = await response.json();
-        throw new Error(errJson.error || "데이터 수집 실패");
+        throw new Error(`API HTTP ${response.status}`);
       }
 
       const result = await response.json();

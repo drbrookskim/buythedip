@@ -525,58 +525,96 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fullscreen Mode Toggle & Re-rendering Engine
   // -------------------------------------------------------------
   function triggerChartResize() {
-    if (priceChartInstance) {
-      priceChartInstance.resize();
-      priceChartInstance.update('none');
+    if (!priceChartInstance) return;
+    const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || (mainChartCard && mainChartCard.classList.contains('is-fullscreen')));
+
+    // In Fullscreen, optimize tick density and font sizing for widescreen monitors
+    if (priceChartInstance.options && priceChartInstance.options.scales && priceChartInstance.options.scales.x) {
+      priceChartInstance.options.scales.x.ticks.maxTicksLimit = isFs ? 18 : 10;
+      if (priceChartInstance.options.scales.x.ticks.font) {
+        priceChartInstance.options.scales.x.ticks.font.size = isFs ? 12 : 11;
+      }
     }
+    if (priceChartInstance.options && priceChartInstance.options.scales && priceChartInstance.options.scales.y) {
+      if (priceChartInstance.options.scales.y.ticks.font) {
+        priceChartInstance.options.scales.y.ticks.font.size = isFs ? 12 : 11;
+      }
+    }
+
+    priceChartInstance.resize();
+    updateDynamicMarkerScale(priceChartInstance);
+    priceChartInstance.update('none');
   }
 
   function handleFullscreenToggle() {
-    const isCurrentlyFs = !!(document.fullscreenElement || document.webkitFullscreenElement || mainChartCard.classList.contains('is-fullscreen'));
+    const isCurrentlyFs = !!(document.fullscreenElement || document.webkitFullscreenElement || (mainChartCard && mainChartCard.classList.contains('is-fullscreen')));
 
     if (!isCurrentlyFs) {
       if (mainChartCard.requestFullscreen) {
-        mainChartCard.requestFullscreen().catch(() => {
+        mainChartCard.requestFullscreen().then(() => {
+          mainChartCard.classList.add('is-fullscreen');
+          triggerChartResize();
+        }).catch(() => {
           mainChartCard.classList.add('is-fullscreen');
           triggerChartResize();
         });
       } else if (mainChartCard.webkitRequestFullscreen) {
         mainChartCard.webkitRequestFullscreen();
+        mainChartCard.classList.add('is-fullscreen');
       } else {
         mainChartCard.classList.add('is-fullscreen');
         triggerChartResize();
       }
-      fullscreenIcon.className = 'fa-solid fa-compress';
-      fullscreenLabel.textContent = '창 모드';
+      if (fullscreenIcon) fullscreenIcon.className = 'fa-solid fa-compress';
+      if (fullscreenLabel) fullscreenLabel.textContent = '창 모드';
+      if (fullscreenToggleBtn) fullscreenToggleBtn.classList.add('active');
     } else {
       if (document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
-      mainChartCard.classList.remove('is-fullscreen');
-      fullscreenIcon.className = 'fa-solid fa-expand';
-      fullscreenLabel.textContent = '전체화면';
+      if (mainChartCard) mainChartCard.classList.remove('is-fullscreen');
+      if (fullscreenIcon) fullscreenIcon.className = 'fa-solid fa-expand';
+      if (fullscreenLabel) fullscreenLabel.textContent = '전체화면';
+      if (fullscreenToggleBtn) fullscreenToggleBtn.classList.remove('active');
       triggerChartResize();
     }
 
-    [50, 150, 300, 500].forEach(delay => setTimeout(triggerChartResize, delay));
+    [30, 80, 150, 300, 500].forEach(delay => setTimeout(triggerChartResize, delay));
   }
 
   fullscreenToggleBtn.addEventListener('click', handleFullscreenToggle);
 
   ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
     document.addEventListener(evt, () => {
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || mainChartCard.classList.contains('is-fullscreen'));
-      fullscreenIcon.className = isFs ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
-      fullscreenLabel.textContent = isFs ? '창 모드' : '전체화면';
-      [50, 150, 300, 500].forEach(delay => setTimeout(triggerChartResize, delay));
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || (mainChartCard && mainChartCard.classList.contains('is-fullscreen')));
+      if (mainChartCard) {
+        if (isFs) {
+          mainChartCard.classList.add('is-fullscreen');
+        } else {
+          mainChartCard.classList.remove('is-fullscreen');
+        }
+      }
+      if (fullscreenIcon) fullscreenIcon.className = isFs ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+      if (fullscreenLabel) fullscreenLabel.textContent = isFs ? '창 모드' : '전체화면';
+      if (fullscreenToggleBtn) fullscreenToggleBtn.classList.toggle('active', isFs);
+      [30, 80, 150, 300, 500].forEach(delay => setTimeout(triggerChartResize, delay));
     });
   });
 
   window.addEventListener('resize', () => {
     triggerChartResize();
   });
+
+  // Observe chart container dimension changes for responsive adaptations
+  const chartContainerElem = document.getElementById('priceChartContainer');
+  if (chartContainerElem && window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      triggerChartResize();
+    });
+    ro.observe(chartContainerElem);
+  }
 
   // -------------------------------------------------------------
   // Real Market Data Fetcher & Technical Indicators

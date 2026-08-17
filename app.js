@@ -606,9 +606,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Real Market Data Fetcher & Technical Indicators
   // -------------------------------------------------------------
   async function fetchRealStockData(symbol, numDays) {
-    stockRealTitleSpan.textContent = "시세 수집 중...";
-    stockRealTitleSpan.style.background = "rgba(79, 70, 229, 0.1)";
-    stockRealTitleSpan.style.color = "#4f46e5";
+    stockRealTitleSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size: 9px; margin-right: 4px;"></i> 실시간 시세 수집 중...';
+    stockRealTitleSpan.style.background = "rgba(0, 217, 146, 0.10)";
+    stockRealTitleSpan.style.color = "#00D992";
 
     try {
       const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}&days=${numDays}`);
@@ -623,9 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const displayName = `${result.name} (${result.ticker})`;
       chartSymbolName.textContent = displayName;
-      stockRealTitleSpan.textContent = `실제 데이터 수신 완료 (${result.data.length}일)`;
-      stockRealTitleSpan.style.background = "rgba(5, 150, 105, 0.1)";
-      stockRealTitleSpan.style.color = "#059669";
+      stockRealTitleSpan.innerHTML = `<i class="fa-solid fa-circle" style="font-size: 7px; color: #00D992; margin-right: 5px;"></i> 실시간 데이터 수신 완료 (${result.data.length}일)`;
+      stockRealTitleSpan.style.background = "rgba(0, 217, 146, 0.14)";
+      stockRealTitleSpan.style.color = "#00D992";
 
       const rawData = result.data
         .filter(item => item && typeof item.close === 'number' && !isNaN(item.close) && item.close > 0)

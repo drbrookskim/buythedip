@@ -1977,35 +1977,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const lastClose = closePrices[closePrices.length - 1];
     const targetPrice = (forecast && forecast.targetPrice) ? forecast.targetPrice : Math.round(lastClose * 1.06);
 
-    const extendedLabels = [...labels, 'D+1(예측)', 'D+2(예측)', 'D+3(예측)'];
-    const paddedClosePrices = [...closePrices, null, null, null];
-    const paddedSma5 = [...sma5Prices, null, null, null];
-    const paddedSma20 = [...sma20Prices, null, null, null];
-    const paddedSma60 = [...sma60Prices, null, null, null];
-    const paddedSma120 = [...sma120Prices, null, null, null];
-    const paddedBuy = [...buyMarkers, null, null, null];
-    const paddedTp = [...tpMarkers, null, null, null];
-    const paddedSl = [...slMarkers, null, null, null];
-    const paddedTs = [...tsMarkers, null, null, null];
-    const paddedTc = [...tcMarkers, null, null, null];
-    const paddedHighs = [...rawData.map(d => d.high), null, null, null];
-    const paddedLows = [...rawData.map(d => d.low), null, null, null];
-
-    let forecastStep1, forecastStep2, forecastStep3;
-    if (forecast && forecast.direction === 'BULLISH') {
-      forecastStep1 = Math.round(lastClose + (targetPrice - lastClose) * 0.35);
-      forecastStep2 = Math.round(lastClose + (targetPrice - lastClose) * 0.72);
-      forecastStep3 = targetPrice;
-    } else if (forecast && forecast.direction === 'BEARISH') {
-      forecastStep1 = Math.round(lastClose + (targetPrice - lastClose) * 0.40);
-      forecastStep2 = Math.round(lastClose + (targetPrice - lastClose) * 0.75);
-      forecastStep3 = targetPrice;
-    } else {
-      forecastStep1 = Math.round(lastClose * (1 - 0.006));
-      forecastStep2 = Math.round(lastClose * 1.002);
-      forecastStep3 = targetPrice;
+    // Future empty right space: 20 trading days (20거래일 우측 빈 공간 여백)
+    const FUTURE_DAYS = 20;
+    const futureLabels = [];
+    const lastDateStr = labels[labels.length - 1] || new Date().toISOString().split('T')[0];
+    let curDate = new Date(lastDateStr);
+    while (futureLabels.length < FUTURE_DAYS) {
+      curDate.setDate(curDate.getDate() + 1);
+      const dayOfWeek = curDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Weekdays only
+        const m = String(curDate.getMonth() + 1).padStart(2, '0');
+        const d = String(curDate.getDate()).padStart(2, '0');
+        const dNum = futureLabels.length + 1;
+        futureLabels.push(`${m}/${d}(D+${dNum})`);
+      }
     }
-    const forecastData = Array(labels.length - 1).fill(null).concat([lastClose, forecastStep1, forecastStep2, forecastStep3]);
+
+    const extendedLabels = [...labels, ...futureLabels];
+    const futurePads = Array(FUTURE_DAYS).fill(null);
+    const paddedClosePrices = [...closePrices, ...futurePads];
+    const paddedSma5 = [...sma5Prices, ...futurePads];
+    const paddedSma20 = [...sma20Prices, ...futurePads];
+    const paddedSma60 = [...sma60Prices, ...futurePads];
+    const paddedSma120 = [...sma120Prices, ...futurePads];
+    const paddedBuy = [...buyMarkers, ...futurePads];
+    const paddedTp = [...tpMarkers, ...futurePads];
+    const paddedSl = [...slMarkers, ...futurePads];
+    const paddedTs = [...tsMarkers, ...futurePads];
+    const paddedTc = [...tcMarkers, ...futurePads];
+    const paddedHighs = [...rawData.map(d => d.high), ...futurePads];
+    const paddedLows = [...rawData.map(d => d.low), ...futurePads];
+
+    let forecastStep1, forecastStep2, forecastStep3, forecastStep4, forecastStep5;
+    if (forecast && forecast.direction === 'BULLISH') {
+      forecastStep1 = Math.round(lastClose + (targetPrice - lastClose) * 0.28);
+      forecastStep2 = Math.round(lastClose + (targetPrice - lastClose) * 0.58);
+      forecastStep3 = Math.round(lastClose + (targetPrice - lastClose) * 0.82);
+      forecastStep4 = targetPrice;
+      forecastStep5 = targetPrice;
+    } else if (forecast && forecast.direction === 'BEARISH') {
+      forecastStep1 = Math.round(lastClose + (targetPrice - lastClose) * 0.30);
+      forecastStep2 = Math.round(lastClose + (targetPrice - lastClose) * 0.62);
+      forecastStep3 = Math.round(lastClose + (targetPrice - lastClose) * 0.85);
+      forecastStep4 = targetPrice;
+      forecastStep5 = targetPrice;
+    } else {
+      forecastStep1 = Math.round(lastClose * (1 - 0.005));
+      forecastStep2 = Math.round(lastClose * 1.002);
+      forecastStep3 = Math.round(lastClose * (1 - 0.003));
+      forecastStep4 = targetPrice;
+      forecastStep5 = targetPrice;
+    }
+    const forecastData = Array(labels.length - 1).fill(null).concat([
+      lastClose, forecastStep1, forecastStep2, forecastStep3, forecastStep4, forecastStep5,
+      ...Array(Math.max(0, FUTURE_DAYS - 5)).fill(null)
+    ]);
 
     // Calculate dynamic Y-axis min/max price range tailored specifically to this stock & scenario
     const validHighs = rawData.map(d => d.high).filter(v => typeof v === 'number' && !isNaN(v) && v > 0);
@@ -2083,8 +2109,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (priceChartInstance) priceChartInstance.destroy();
 
     const totalBars = extendedLabels.length;
-    const defaultVisibleDays = 125; // 기본 뷰 기간: 최근 6개월 (약 125 거래일)
-    const minIndex = Math.max(0, totalBars - defaultVisibleDays);
+    const defaultVisibleDataDays = 125; // 기본 뷰 기간: 최근 6개월 (약 125 거래일) + 20거래일 우측 빈 공간
+    const minIndex = Math.max(0, totalBars - defaultVisibleDataDays - FUTURE_DAYS);
     const initialMinLabel = extendedLabels[minIndex];
     const initialMaxLabel = extendedLabels[totalBars - 1];
 
@@ -2251,6 +2277,14 @@ document.addEventListener('DOMContentLoaded', () => {
               },
               beforeBody: function(context) {
                 const idx = context[0].dataIndex;
+                if (idx >= rawData.length) {
+                  const futureDayNum = idx - rawData.length + 1;
+                  return [
+                    `🔮 [미래 여백 및 AI 시나리오: D+${futureDayNum}]`,
+                    `예상 목표가: ₩ ${targetPrice.toLocaleString()}`,
+                    `예상 지지선: ₩ ${(forecast && forecast.supportPrice ? forecast.supportPrice : Math.round(lastClose * 0.96)).toLocaleString()}`
+                  ];
+                }
                 const d = rawData[idx];
                 if (!d || d.open === undefined) return null;
                 const isUp = d.close >= d.open;

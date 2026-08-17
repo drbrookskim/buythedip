@@ -605,23 +605,44 @@ document.addEventListener('DOMContentLoaded', () => {
   // -------------------------------------------------------------
   // Real Market Data Fetcher & Technical Indicators
   // -------------------------------------------------------------
+  const LIVE_API_BASE = 'https://buythedip-api.drbrooks-kim.workers.dev';
+
   async function fetchRealStockData(symbol, numDays) {
     stockRealTitleSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size: 9px; margin-right: 4px;"></i> 실시간 시세 수집 중...';
     stockRealTitleSpan.style.background = "rgba(0, 217, 146, 0.10)";
     stockRealTitleSpan.style.color = "#00D992";
 
     try {
-      const response = await fetch(`/api/stock?symbol=${encodeURIComponent(symbol)}&days=${numDays}`);
-      if (!response.ok) {
-        throw new Error(`API HTTP ${response.status}`);
+      const endpoints = [
+        `/api/stock?symbol=${encodeURIComponent(symbol)}&days=${numDays}`,
+        `${LIVE_API_BASE}/api/stock?symbol=${encodeURIComponent(symbol)}&days=${numDays}`
+      ];
+
+      let result = null;
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint);
+          if (response.ok) {
+            result = await response.json();
+            if (result && result.data && result.data.length > 0) break;
+          }
+        } catch (e) {
+          // try next live endpoint
+        }
       }
 
-      const result = await response.json();
-      if (!result.data || result.data.length === 0) {
-        throw new Error("유효한 시세 데이터가 없습니다.");
+      if (!result || !result.data || result.data.length === 0) {
+        throw new Error("유효한 실시간 시세 데이터가 없습니다.");
       }
 
-      const displayName = `${result.name} (${result.ticker})`;
+      let stockDisplayName = result.name || symbol;
+      if (KRX_MASTER_DB && KRX_MASTER_DB.length > 0) {
+        const cleanSym = symbol.replace('.KS', '').replace('.KQ', '');
+        const found = KRX_MASTER_DB.find(s => s.code === cleanSym || s.name.toLowerCase() === symbol.toLowerCase() || s.name.includes(symbol));
+        if (found) stockDisplayName = found.name;
+      }
+
+      const displayName = `${stockDisplayName} (${result.ticker || symbol})`;
       chartSymbolName.textContent = displayName;
       stockRealTitleSpan.innerHTML = `<i class="fa-solid fa-circle" style="font-size: 7px; color: #00D992; margin-right: 5px;"></i> 실시간 데이터 수신 완료 (${result.data.length}일)`;
       stockRealTitleSpan.style.background = "rgba(0, 217, 146, 0.14)";

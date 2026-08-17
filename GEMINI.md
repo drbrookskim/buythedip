@@ -59,3 +59,4 @@
 | 2026-08-17 | 서비스 타이틀(NOSTOS: Buy the Dip) 폰트 Space Grotesk Bold(700) 전면 강화 | 브랜딩/타이포 | 메인 로고 및 서브 브랜딩 텍스트 전체에 미래지향적 Space Grotesk Bold 타이포그래피 완벽 적용 |
 | 2026-08-17 | 초고속 실시간 KRX 시세 연동 엔진(Naver+Yahoo) 구축 및 백테스트 전면 실데이터화 | 백엔드/시세 | 50ms 초고속 실시간 일별 시고저종(OHLC) 시세 공급 및 퀀트 백테스팅·AI 타점 전면 실데이터 분석 처리 |
 | 2026-08-17 | Cloudflare Worker 기반 라이브 시세 API(`buythedip-api`) 배포 및 GitHub Pages 실시간 연동 | 배포/인프라 | GitHub Pages 웹사이트에서도 로컬 서버 없이 100% 실시간 KRX 시세 및 실데이터 백테스팅 연동 완료 |
+| 2026-08-17 | 차트 우측 미래 여백 20거래일(D+1~D+20) 확장 & AI 도약 궤적 전면 개편 | 차트/UX | 차트 우측 끝에 20거래일 빈 공간(Forward Margin) 배치, 미래 일자별 D+N 라벨 및 5단계 AI 예측 궤적 완성 |

@@ -371,11 +371,12 @@
   - 정적 웹 환경에서도 원활하게 동작하도록 `.nojekyll` 설정 및 `generateRealisticFallbackData` 시뮬레이션 폴백 엔진 탑재.
   - 별도의 서버 구동 없이도 브라우저만으로 2,800+ KRX 종목 탐색, 4대 프리셋 전략 검증, 4종 이평선 토글, 누적 자산 성장 곡선 모달을 누구나 즉시 체험 가능.
 
-### 58. Cloudflare Worker 기반 라이브 시세 API(`buythedip-api`) 배포 및 GitHub Pages 실시간 연동 (2026-08-17)
-- **GitHub Pages 정적 호스팅 실데이터 연동 완성**:
-  - 글로벌 엣지 서버리스 API(`buythedip-api.drbrooks-kim.workers.dev`)를 Cloudflare Workers로 배포.
-  - Naver Finance & Yahoo Finance 실시간 시세를 20ms 미만 지연으로 글로벌 CORS 개방(`*`) 공급.
-  - `app.js`에서 로컬 서버(`/api/stock`)와 Cloudflare Worker Live API를 듀얼 연결하여, **GitHub Pages(`drbrookskim.github.io/buythedip/`)에서도 별도의 로컬 서버 없이 `🟢 실시간 데이터 수신 완료 (250일)`가 100% 정상 작동**하도록 완성.
+### 59. 차트 우측 미래 여백 20거래일(D+1~D+20) 확장 & AI 도약 궤적 전면 개편 (2026-08-17)
+- **차트 우측 20거래일 빈 공간(Forward Margin) 확보**:
+  - 차트의 우측 끝에 20거래일 분량의 여백 라벨(`MM/DD(D+1)` ~ `MM/DD(D+20)`)을 동적으로 생성 및 배치.
+  - 모든 캔들스틱, 이동평균선(5/20/60/120MA), 5종 매매 타점 마커에 20거래일 `null` 패딩을 적용하여 캔버스 우측에 여유로운 미래 전망 공간을 제공.
+  - AI 도약 예측 궤적은 최근 종가에서 5단계(`lastClose` -> `D+1` -> `D+2` -> `D+3` -> `D+4` -> `D+5`)로 자연스러운 곡선으로 투영된 후 20거래일 여백과 완벽하게 조화.
+  - 마우스 툴팁에 미래 구간 호버 시 `🔮 [미래 여백 및 AI 시나리오: D+N]` 안내 정보 제공.
 
 ---
 

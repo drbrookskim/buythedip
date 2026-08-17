@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=20260817_2307">
+  <link rel="stylesheet" href="style.css?v=20260817_2311">
 </head>
 <body>
   <div class="app-container">
@@ -86,9 +86,10 @@
                 <label for="timeframe"><i class="fa-solid fa-calendar-days"></i> 분석 기간</label>
                 <select id="timeframe">
                   <option value="250" selected>최근 1년 (250일)</option>
-                  <option value="500">최근 2년 (500일)</option>
                   <option value="750">최근 3년 (750일)</option>
                   <option value="1250">최근 5년 (1250일)</option>
+                  <option value="1750">최근 7년 (1750일)</option>
+                  <option value="2500">최근 10년 (2500일)</option>
                 </select>
               </div>
               <button type="button" id="estimationBtn" class="btn btn-estimation" title="실시간 예측 및 전략 시뮬레이션 실행 (Estimation & Simulation)">
@@ -539,6 +540,6 @@
 
   </div>
 
-  <script src="app.js?v=20260817_2307"></script>
+  <script src="app.js?v=20260817_2311"></script>
 </body>
 </html>

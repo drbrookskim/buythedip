@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOSTOS: Buy the Dip | 눌림목 매수/매도 전략 시뮬레이터</title>
+  <meta name="description" content="NOSTOS: Buy the Dip - 주식 눌림목 매수 및 다각적 매도 전략(트레일링 스탑, 타임컷, 손익비) 백테스트 및 시뮬레이션 웹 대시보드">
+  
+  <!-- Fonts: Korean (Noto Sans KR), English (Inter), Monospace (IBM Plex Mono), Titles (Space Grotesk) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons & Chart.js + Zoom Plugin -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+  <link rel="stylesheet" href="style.css?v=20260817_1500">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-mark">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="logo-text">
+          <h1>NOSTOS: <span class="brand-sub">Buy the Dip</span> <span class="badge">SIGNAL INTELLIGENCE</span></h1>
+          <p>종목 탐색 &middot; AI 전략 추천 &middot; 실시간 백테스팅 가시화 엔진</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="navTradeLogBtn" class="btn btn-secondary">
+          <i class="fa-solid fa-list-check"></i> 매매 이력 (<span id="headerTradeCount">0</span>)
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Flow (Journey: 1. Search -> 2. AI Strategy -> 3. Pill KPIs -> 4. Full-Width Chart) -->
+    <main class="main-flow-container">
+
+      <!-- ========================================================================= -->
+      <!-- 1. 종목 검색 & 최근 검색어 (Hero Search Section)                           -->
+      <!-- ========================================================================= -->
+      <section class="search-hero-card">
+        <div class="search-hero-content">
+          <div class="search-main-row">
+            <!-- Search Box with Autocomplete Dropdown -->
+            <div class="search-input-box-wrapper">
+              <div class="search-bar-input-group">
+                <input type="text" id="stockSearchInput" placeholder="종목명 또는 심볼 검색 (예: 삼성전자, SK하이닉스, 알테오젠, 005930, AAPL)..." autocomplete="off" value="삼성전자 (005930)">
+                <button type="button" id="clearSearchInputBtn" class="btn-clear-input" title="검색어 지우기">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+                <button type="button" id="runSimBtn" class="btn-search-submit" title="검색 및 시뮬레이션 실행">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+              </div>
+              <div id="searchResults" class="search-dropdown"></div>
+              <!-- Hidden input to store selected stock symbol -->
+              <input type="hidden" id="selectedSymbol" value="005930">
+            </div>
+
+            <!-- Inline Investment Capital & Timeframe Settings -->
+            <div class="search-settings-group">
+              <div class="search-sub-control capital-control-wrapper">
+                <label for="initialCapital"><i class="fa-solid fa-won-sign"></i> 투자금</label>
+                <div class="input-with-unit">
+                  <input type="text" id="initialCapital" value="700,000" inputmode="numeric" placeholder="투자금 입력">
+                  <span class="unit-text">원</span>
+                </div>
+                <div class="capital-quick-chips">
+                  <button type="button" class="btn-cap-chip active" data-amount="10x"><span>10배 (기본)</span></button>
+                  <button type="button" class="btn-cap-chip" data-amount="1000000"><span>100만</span></button>
+                  <button type="button" class="btn-cap-chip" data-amount="5000000"><span>500만</span></button>
+                  <button type="button" class="btn-cap-chip" data-amount="10000000"><span>1천만</span></button>
+                  <button type="button" class="btn-cap-chip" data-amount="30000000"><span>3천만</span></button>
+                  <button type="button" class="btn-cap-chip" data-amount="50000000"><span>5천만</span></button>
+                </div>
+              </div>
+              <div class="search-sub-control">
+                <label for="timeframe"><i class="fa-solid fa-calendar-days"></i> 분석 기간</label>
+                <select id="timeframe">
+                  <option value="250" selected>최근 1년 (250일)</option>
+                  <option value="500">최근 2년 (500일)</option>
+                  <option value="750">최근 3년 (750일)</option>
+                  <option value="1250">최근 5년 (1250일)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Search Keywords Chips (최근 검색어) -->
+          <div class="recent-searches-row">
+            <span class="recent-label"><i class="fa-solid fa-clock-rotate-left"></i> 최근 검색:</span>
+            <div class="recent-chips-container" id="recentChipsContainer">
+              <!-- Dynamically populated from localStorage / defaults -->
+            </div>
+            <button type="button" id="clearRecentBtn" class="btn-clear-recent-all" title="최근 검색 기록 삭제">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- 2. Jump from the Dip Strategy (통합 AI 실시간 진단 & 도약 매매 전략)          -->
+      <!-- ========================================================================= -->
+      <section class="strategy-and-kpis-card jftd-strategy-card" id="forecastHudCard">
+        <!-- Main Card Header -->
+        <div class="jftd-card-header">
+          <div class="jftd-title-wrapper">
+            <h3 class="section-title">
+              <i class="fa-solid fa-bolt-lightning text-primary"></i> Jump from the Dip Strategy
+            </h3>
+          </div>
+          <div class="jftd-header-actions">
+            <div class="forecast-prob-badge" id="forecastProbBadge">
+              <span class="prob-label">반등 신뢰도</span>
+              <span class="prob-val" id="forecastProbVal">84%</span>
+              <span class="prob-level" id="forecastProbLevel">강력 매수 구간</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part 1: Real-time Rebound & Jump Targets (실시간 도약 타점 예측) -->
+        <div class="jftd-section-block">
+          <div class="kpi-pill-bar">
+            <!-- 1. 예상 매수가 & 액션 가이드 (2-컬럼) -->
+            <div class="kpi-pill kpi-pill-forecast">
+              <div class="pill-col-left">
+                <div class="pill-title-group">
+                  <span class="pill-icon-inline" id="forecastEntryIcon"><i class="fa-solid fa-arrow-down"></i></span>
+                  <span class="pill-label" id="forecastEntryLabel">예상 매수가</span>
+                </div>
+                <div class="pill-tag-row">
+                  <span class="pill-sub" id="forecastEntryTag">20일선 지지</span>
+                </div>
+                <div class="pill-action-guide action-bullish" id="forecastEntryAction">
+                  <i class="fa-solid fa-crosshairs"></i>
+                  <span>1차 40% 분할 매수 대기</span>
+                </div>
+              </div>
+              <div class="pill-col-right">
+                <span class="pill-val" id="forecastEntryVal">₩ 0</span>
+              </div>
+            </div>
+
+            <!-- 2. 목표 매도가 / 하방 경보가 & 액션 가이드 (2-컬럼) -->
+            <div class="kpi-pill kpi-pill-forecast">
+              <div class="pill-col-left">
+                <div class="pill-title-group">
+                  <span class="pill-icon-inline" id="forecastTpIcon"><i class="fa-solid fa-bullseye"></i></span>
+                  <span class="pill-label" id="forecastTpLabel">목표 매도가</span>
+                </div>
+                <div class="pill-tag-row">
+                  <span class="pill-sub text-cobalt" id="forecastTpPct">+0.0%</span>
+                </div>
+                <div class="pill-action-guide action-bullish" id="forecastTpAction">
+                  <i class="fa-solid fa-coins"></i>
+                  <span>도달 시 50% 분할 익절</span>
+                </div>
+              </div>
+              <div class="pill-col-right">
+                <span class="pill-val text-cobalt" id="forecastTpVal">₩ 0</span>
+              </div>
+            </div>
+
+            <!-- 3. 손절 방어선 & 액션 가이드 (2-컬럼) -->
+            <div class="kpi-pill kpi-pill-forecast">
+              <div class="pill-col-left">
+                <div class="pill-title-group">
+                  <span class="pill-icon-inline" id="forecastSlIcon"><i class="fa-solid fa-shield-halved"></i></span>
+                  <span class="pill-label" id="forecastSlLabel">손절 방어선</span>
+                </div>
+                <div class="pill-tag-row">
+                  <span class="pill-sub text-rose" id="forecastSlPct">-0.0%</span>
+                </div>
+                <div class="pill-action-guide action-bullish" id="forecastSlAction">
+                  <i class="fa-solid fa-ban"></i>
+                  <span>종가 이탈 시 기계적 손절</span>
+                </div>
+              </div>
+              <div class="pill-col-right">
+                <span class="pill-val text-rose" id="forecastSlVal">₩ 0</span>
+              </div>
+            </div>
+
+            <!-- 4. 예상 보유 기간 & 액션 가이드 (2-컬럼) -->
+            <div class="kpi-pill kpi-pill-forecast">
+              <div class="pill-col-left">
+                <div class="pill-title-group">
+                  <span class="pill-icon-inline" id="forecastHorizonIcon"><i class="fa-solid fa-hourglass-half"></i></span>
+                  <span class="pill-label" id="forecastHorizonLabel">예상 보유 기간</span>
+                </div>
+                <div class="pill-tag-row">
+                  <span class="pill-sub text-emerald" id="forecastReboundTag">단기 반등 유효</span>
+                </div>
+                <div class="pill-action-guide action-bullish" id="forecastHorizonAction">
+                  <i class="fa-solid fa-stopwatch"></i>
+                  <span>기간 내 미반등 시 타임컷</span>
+                </div>
+              </div>
+              <div class="pill-col-right">
+                <span class="pill-val text-emerald" id="forecastHorizonVal">3~5일</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Strategic Tactical Diagnosis Commentary -->
+          <div class="forecast-commentary-box">
+            <div class="commentary-header">
+              <i class="fa-solid fa-microchip text-primary"></i>
+              <span>AI 종합 전략 분석 &amp; 대응 시나리오</span>
+            </div>
+            <p class="commentary-text" id="forecastCommentaryText">
+              현재 종목의 기술적 지표와 과거 백테스팅 눌림목 패턴을 종합 분석 중입니다...
+            </p>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="jftd-divider"></div>
+
+        <!-- Part 2: Jump Strategy Execution Presets (눌림목 매수 전략) -->
+        <div class="jftd-section-block">
+          <div class="jftd-sub-header">
+            <span class="jftd-sub-title">
+              <i class="fa-solid fa-layer-group"></i> 눌림목 매수 전략
+            </span>
+          </div>
+
+          <div class="preset-cards-grid">
+            <button type="button" class="btn-preset active" data-preset="balanced">
+              <div class="preset-header">
+                <span class="preset-icon-badge badge-balanced"><i class="fa-solid fa-scale-balanced"></i></span>
+                <span class="preset-title">기본 매수</span>
+                <span class="preset-badge badge-balanced">표준 추천</span>
+              </div>
+              <p class="preset-desc">익절 6% / 손절 3% + 7일 타임컷 &amp; 3% 트레일링 스탑 병행 표준 안정 전략</p>
+              <div class="preset-tags">
+                <span class="preset-tag">익절 6%</span>
+                <span class="preset-tag">손절 3%</span>
+                <span class="preset-tag">7일 컷</span>
+                <span class="preset-tag">TS 3%</span>
+              </div>
+            </button>
+
+            <button type="button" class="btn-preset" data-preset="trailing">
+              <div class="preset-header">
+                <span class="preset-icon-badge badge-trailing"><i class="fa-solid fa-arrow-trend-up"></i></span>
+                <span class="preset-title">대세 추종 매수</span>
+                <span class="preset-badge badge-trailing">수익 극대화</span>
+              </div>
+              <p class="preset-desc">목표가 12% &amp; 고점 대비 -2.5% 트레일링 청산으로 대세 상승 추세 추종</p>
+              <div class="preset-tags">
+                <span class="preset-tag">익절 12%</span>
+                <span class="preset-tag">손절 3.5%</span>
+                <span class="preset-tag">TS 2.5%</span>
+              </div>
+            </button>
+
+            <button type="button" class="btn-preset" data-preset="timecut">
+              <div class="preset-header">
+                <span class="preset-icon-badge badge-timecut"><i class="fa-solid fa-bolt"></i></span>
+                <span class="preset-title">타임컷(4일 미상승 청산)</span>
+                <span class="preset-badge badge-timecut">단기 회전</span>
+              </div>
+              <p class="preset-desc">RSI 40 빠른 4% 반등 노림 &amp; 4일 미상승 시 즉시 청산하여 자금 회전 극대화</p>
+              <div class="preset-tags">
+                <span class="preset-tag">익절 4%</span>
+                <span class="preset-tag">손절 2%</span>
+                <span class="preset-tag">4일 컷</span>
+              </div>
+            </button>
+
+            <button type="button" class="btn-preset" data-preset="aggressive">
+              <div class="preset-header">
+                <span class="preset-icon-badge badge-aggressive"><i class="fa-solid fa-bullseye"></i></span>
+                <span class="preset-title">120일선 스윙</span>
+                <span class="preset-badge badge-aggressive">손익비 3.2:1</span>
+              </div>
+              <p class="preset-desc">120일선 위 급락 조정 시 진입, 익절 8% / 손절 2.5%로 높은 손익비 스윙</p>
+              <div class="preset-tags">
+                <span class="preset-tag">익절 8%</span>
+                <span class="preset-tag">손절 2.5%</span>
+                <span class="preset-tag">10일 스윙</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Hidden inputs for parameter binding -->
+          <div style="display: none;">
+            <input type="number" id="takeProfit" value="6.0">
+            <input type="number" id="stopLoss" value="3.0">
+            <select id="trendMa"><option value="60" selected>60</option></select>
+            <select id="dipType"><option value="ma20_rsi" selected>ma20_rsi</option></select>
+            <input type="range" id="rsiThreshold" value="45"><span id="rsiVal">45</span>
+            <input type="checkbox" id="useTrailingStop" checked>
+            <input type="range" id="trailingPct" value="3.0"><span id="trailingVal">3.0</span>
+            <input type="checkbox" id="useTimeCut" checked>
+            <input type="range" id="maxHoldDays" value="7"><span id="holdDaysVal">7</span>
+            <input type="number" id="slippageFee" value="0.2">
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="jftd-divider"></div>
+
+        <!-- Part 3: Strategy Backtest Performance KPIs (전략 백테스트 성과 지표) -->
+        <div class="jftd-section-block">
+          <div class="jftd-sub-header">
+            <span class="jftd-sub-title">
+              <i class="fa-solid fa-chart-pie"></i> 전략 백테스트 성과 지표 (Backtest KPI)
+            </span>
+          </div>
+          <div class="kpi-pill-bar">
+            <div class="kpi-pill kpi-pill-return">
+              <div class="pill-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+              <div class="pill-info">
+                <span class="pill-label">총 수익률</span>
+                <span class="pill-val" id="kpiTotalReturn">+0.00%</span>
+              </div>
+              <span class="pill-sub" id="kpiFinalBalance">₩0</span>
+            </div>
+
+            <div class="kpi-pill kpi-pill-winrate">
+              <div class="pill-icon"><i class="fa-solid fa-trophy"></i></div>
+              <div class="pill-info">
+                <span class="pill-label">승률</span>
+                <span class="pill-val" id="kpiWinRate">0.0%</span>
+              </div>
+              <span class="pill-sub" id="kpiWinCount">0승 0패</span>
+            </div>
+
+            <div class="kpi-pill kpi-pill-pf">
+              <div class="pill-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+              <div class="pill-info">
+                <span class="pill-label">손익비</span>
+                <span class="pill-val" id="kpiProfitFactor">0.00</span>
+              </div>
+              <span class="pill-sub" id="kpiAvgReturn">평균 0.00%</span>
+            </div>
+
+            <div class="kpi-pill kpi-pill-mdd">
+              <div class="pill-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="pill-info">
+                <span class="pill-label">최대 낙폭</span>
+                <span class="pill-val text-rose" id="kpiMDD">-0.00%</span>
+              </div>
+              <span class="pill-sub" id="kpiTradeCount">총 0회 매매</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================================= -->
+      <!-- 3. 풀 너비 메인 차트 + 우측 상단 전체화면 버튼 (Full-Width Main Chart)        -->
+      <!-- ========================================================================= -->
+      <section class="fullwidth-chart-card" id="mainChartCard">
+        <div class="chart-header">
+          <!-- Left: Stock Title & Recognizable 10px Legend -->
+          <div class="chart-title-area">
+            <div class="chart-main-title">
+              <i class="fa-solid fa-chart-line text-indigo"></i>
+              <span id="chartSymbolName" class="chart-stock-name">삼성전자 (005930)</span>
+              <span id="stockRealTitle" class="badge badge-status">로딩 중...</span>
+            </div>
+            <div class="chart-legend-custom" id="chartLegendFilters">
+              <button type="button" class="legend-filter-btn active" data-signal="ALL" title="모든 신호 표시">
+                <span class="legend-filter-all-dot"></span> <span class="legend-text">전체</span>
+              </button>
+              <button type="button" class="legend-filter-btn" data-signal="BUY" title="매수 (Buy) 타점만 하이라이트">
+                <span class="legend-shape shape-circle"></span> <span class="legend-text">매수 (Buy)</span> <span class="legend-count" id="legendBuyCount">0</span>
+              </button>
+              <button type="button" class="legend-filter-btn" data-signal="TP" title="익절 (TP) 타점만 하이라이트">
+                <span class="legend-shape shape-diamond"></span> <span class="legend-text">익절 (TP)</span> <span class="legend-count" id="legendTpCount">0</span>
+              </button>
+              <button type="button" class="legend-filter-btn" data-signal="SL" title="손절 (SL) 타점만 하이라이트">
+                <span class="legend-shape shape-cross"></span> <span class="legend-text">손절 (SL)</span> <span class="legend-count" id="legendSlCount">0</span>
+              </button>
+              <button type="button" class="legend-filter-btn" data-signal="TS" title="트레일링 (TS) 타점만 하이라이트">
+                <span class="legend-shape shape-triangle"></span> <span class="legend-text">트레일링 (TS)</span> <span class="legend-count" id="legendTsCount">0</span>
+              </button>
+              <button type="button" class="legend-filter-btn" data-signal="TC" title="타임컷 (TC) 타점만 하이라이트">
+                <span class="legend-shape shape-square"></span> <span class="legend-text">타임컷 (TC)</span> <span class="legend-count" id="legendTcCount">0</span>
+              </button>
+              <div class="legend-ma-group" id="maLegendGroup">
+                <button type="button" class="legend-ma-tag ma-btn" data-ma="5" title="5일 초단기 모멘텀선 토글"><span class="ma-dot ma5-dot"></span> 5일선</button>
+                <button type="button" class="legend-ma-tag ma-btn active" data-ma="20" title="20일 단기 눌림목 지지선 토글"><span class="ma-dot ma20-dot"></span> 20일선</button>
+                <button type="button" class="legend-ma-tag ma-btn active" data-ma="60" title="60일 중기 수급선 토글"><span class="ma-dot ma60-dot"></span> 60일선</button>
+                <button type="button" class="legend-ma-tag ma-btn active" data-ma="120" title="120일 장기 경기/스윙 지지선 토글"><span class="ma-dot ma120-dot"></span> 120일선</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Action Controls, Zoom & Fullscreen Toggle Button -->
+          <div class="chart-controls-toolbar">
+            <!-- Chart Type Toggle (봉차트 vs 라인차트) -->
+            <div class="chart-btn-group chart-type-toggle-group">
+              <button type="button" id="chartTypeCandleBtn" class="btn-chart-ctrl active" title="봉차트 (캔들스틱) 보기">
+                <i class="fa-solid fa-chart-simple"></i> 봉차트
+              </button>
+              <button type="button" id="chartTypeLineBtn" class="btn-chart-ctrl" title="라인차트 보기">
+                <i class="fa-solid fa-chart-line"></i> 라인차트
+              </button>
+            </div>
+
+            <button type="button" id="chartEquityModalBtn" class="btn-chart-ctrl btn-equity-pill" title="누적 자산 성장 곡선 팝업">
+              <i class="fa-solid fa-chart-area text-emerald"></i> 누적 자산 성장 곡선
+            </button>
+            <div class="chart-btn-group">
+              <button type="button" id="panLeftBtn" class="btn-chart-ctrl" title="과거(좌)로 이동"><i class="fa-solid fa-arrow-left"></i> 과거</button>
+              <button type="button" id="panRightBtn" class="btn-chart-ctrl" title="최신(우)으로 이동">미래 <i class="fa-solid fa-arrow-right"></i></button>
+              <button type="button" id="zoomInBtn" class="btn-chart-ctrl" title="확대 (Ctrl + 휠 위로)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+              <button type="button" id="zoomOutBtn" class="btn-chart-ctrl" title="축소 (Ctrl + 휠 아래로)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+              <button type="button" id="resetZoomBtn" class="btn-chart-ctrl" title="원래대로 초기화"><i class="fa-solid fa-rotate-left"></i> 초기화</button>
+            </div>
+            <!-- Fullscreen Toggle Button -->
+            <button type="button" id="fullscreenToggleBtn" class="btn-chart-ctrl btn-fullscreen-toggle" title="전체화면 전환">
+              <i class="fa-solid fa-expand" id="fullscreenIcon"></i> <span id="fullscreenLabel">전체화면</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chart-body" id="priceChartContainer">
+          <canvas id="priceChart"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- 4. 누적 자산 성장 곡선 팝업 모달 (Equity Curve Modal Popup)                 -->
+    <!-- ========================================================================= -->
+    <!-- ========================================================================= -->
+    <!-- 4. 누적 자산 성장 곡선 팝업 모달 (Equity Curve Modal Popup)                 -->
+    <!-- ========================================================================= -->
+    <div class="modal-overlay" id="equityModal" style="display: none;">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-solid fa-chart-area text-emerald"></i>
+            <h3>누적 자산 성장 곡선 (Strategy vs Buy &amp; Hold)</h3>
+            <span class="badge badge-status" id="modalStockBadge">삼성전자 (005930)</span>
+          </div>
+          <button type="button" class="btn-modal-close" id="closeEquityModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-kpi-summary-row">
+            <div class="modal-kpi-box">
+              <span class="eq-kpi-label">초기 투자금</span>
+              <span class="eq-kpi-value" id="modalInitialCapital">₩ 1,000,000</span>
+            </div>
+            <div class="modal-kpi-box">
+              <span class="eq-kpi-label">전략 최종 자산</span>
+              <span class="eq-kpi-value text-emerald" id="modalFinalBalance">₩ 1,000,000</span>
+            </div>
+            <div class="modal-kpi-box">
+              <span class="eq-kpi-label">단순 보유 (Buy &amp; Hold)</span>
+              <span class="eq-kpi-value" id="modalBuyHoldBalance">₩ 1,000,000</span>
+            </div>
+            <div class="modal-kpi-box">
+              <span class="eq-kpi-label">초과 수익 (Alpha)</span>
+              <span class="eq-kpi-value text-emerald" id="modalAlpha">+0.00%</span>
+            </div>
+          </div>
+          <div class="modal-chart-container">
+            <canvas id="equityChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 5. 매매 이력 상세 전용 페이지/모달 (Dedicated Trade Log Modal/Page)         -->
+    <!-- ========================================================================= -->
+    <div class="modal-overlay" id="tradeLogModal" style="display: none;">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-solid fa-list-check text-indigo"></i>
+            <h3>매매 이력 상세 (Trade Log)</h3>
+            <span class="log-count-badge" id="logCount">총 0건의 거래</span>
+          </div>
+          <div class="modal-header-actions">
+            <button type="button" id="exportCsvBtn" class="btn btn-secondary btn-sm">
+              <i class="fa-solid fa-file-csv"></i> CSV 다운로드
+            </button>
+            <button type="button" class="btn-modal-close" id="closeTradeLogModalBtn">&times;</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <!-- Trade Type Filter Tabs -->
+          <div class="trade-filter-tabs">
+            <button type="button" class="btn-filter-tab active" data-filter="all">전체 거래 (<span id="filterAllCount">0</span>)</button>
+            <button type="button" class="btn-filter-tab" data-filter="tp">🔵 익절 (TP) (<span id="filterTpCount">0</span>)</button>
+            <button type="button" class="btn-filter-tab" data-filter="sl">⭕ 손절 (SL) (<span id="filterSlCount">0</span>)</button>
+            <button type="button" class="btn-filter-tab" data-filter="ts">🟢▲ 트레일링 (TS) (<span id="filterTsCount">0</span>)</button>
+            <button type="button" class="btn-filter-tab" data-filter="tc">🔵 타임컷 (TC) (<span id="filterTcCount">0</span>)</button>
+          </div>
+
+          <div class="table-responsive modal-table-container">
+            <table class="trade-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>진입 일자</th>
+                  <th>진입가</th>
+                  <th>청산 일자</th>
+                  <th>청산가</th>
+                  <th>보유 기간</th>
+                  <th>수익률 (%)</th>
+                  <th>청산 사유</th>
+                </tr>
+              </thead>
+              <tbody id="tradeLogBody">
+                <tr>
+                  <td colspan="8" class="empty-msg">시뮬레이션을 실행하여 거래 결과를 확인하세요.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js?v=20260817_1500"></script>
+</body>
+</html>

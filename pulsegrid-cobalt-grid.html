@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PULSEGRID — Real-time Signal Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F5F3EA;
+    --grid-line: rgba(42,63,245,0.12);
+    --grid-line-strong: rgba(42,63,245,0.22);
+    --cobalt:#2A3FF5;
+    --cobalt-soft:#5A6BFF;
+    --title-black:#0F172A;
+    --ink:#12173D;
+    --ink-70: rgba(18,23,61,0.7);
+    --ink-45: rgba(18,23,61,0.45);
+    --amber:#FF7A29;
+    --panel:#FCFBF6;
+    --radius: 2px;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+      var(--cream);
+    color:var(--ink);
+    font-family:'Inter', 'Noto Sans KR', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  ::selection{ background:var(--cobalt); color:var(--cream); }
+
+  a{ color:inherit; }
+
+  :focus-visible{
+    outline: 2px solid var(--cobalt);
+    outline-offset: 3px;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--cobalt);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    word-break: keep-all;
+  }
+  .eyebrow::before{
+    content:'';
+    width:6px; height:6px;
+    background:var(--cobalt);
+    display:inline-block;
+    flex-shrink: 0;
+  }
+
+  .display{
+    font-family:'Inter', 'Noto Sans KR', sans-serif;
+    font-weight:800;
+    font-style:normal;
+    color:var(--title-black);
+    line-height:1.2;
+    letter-spacing:-0.02em;
+    margin:0;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+
+  p, .lede, .section-desc, td, th {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+  }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  .hairline{
+    border:none;
+    border-top:1px solid var(--grid-line-strong);
+    margin:0;
+  }
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(245,243,234,0.86);
+    backdrop-filter: blur(8px);
+    border-bottom:1px solid var(--grid-line-strong);
+  }
+  .nav-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:0.02em;
+  }
+  .logo-mark{
+    width:20px; height:20px;
+    position:relative;
+    flex-shrink:0;
+  }
+  .logo-mark span{
+    position:absolute;
+    background:var(--cobalt);
+    display:block;
+  }
+  .logo-mark span:nth-child(1){ width:8px; height:8px; left:0; top:12px; }
+  .logo-mark span:nth-child(2){ width:8px; height:8px; left:6px; top:6px; background:var(--cobalt-soft); }
+  .logo-mark span:nth-child(3){ width:8px; height:8px; left:12px; top:0; background:var(--amber); }
+
+  .nav-links{
+    display:flex;
+    gap:32px;
+    font-size:14px;
+    font-weight:500;
+    color:var(--ink-70);
+    list-style:none;
+    margin:0; padding:0;
+  }
+  .nav-links a{ text-decoration:none; }
+  .nav-links a:hover{ color:var(--cobalt); }
+
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:11px 20px;
+    border:1px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn:hover{ background:var(--ink); color:var(--cream); }
+  .btn-primary{
+    background:var(--cobalt);
+    border-color:var(--cobalt);
+    color:var(--cream);
+  }
+  .btn-primary:hover{ background:var(--cobalt-soft); border-color:var(--cobalt-soft); color:var(--cream); }
+
+  @media (max-width:760px){ .nav-links{ display:none; } }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:96px 0 72px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap:56px;
+    align-items:center;
+  }
+  @media (max-width:900px){ .hero-grid{ grid-template-columns:1fr; } }
+
+  .hero h1{
+    font-size:clamp(40px, 5.4vw, 68px);
+    margin:18px 0 22px;
+  }
+  .hero p.lede{
+    font-size:17px;
+    line-height:1.6;
+    color:var(--ink-70);
+    max-width:100%;
+    margin:0 0 32px;
+  }
+  .hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:36px; }
+
+  .hero-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-45);
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .hero-meta b{ color:var(--ink); font-weight:600; }
+
+  /* glitch staircase decoration */
+  .staircase{
+    position:absolute;
+    top:40px; right:-10px;
+    width:120px; height:120px;
+    pointer-events:none;
+    opacity:0.9;
+  }
+  .step{ position:absolute; width:16px; height:16px; }
+  .step .a{ position:absolute; inset:0; background:var(--cobalt); }
+  .step .b{ position:absolute; inset:0; background:var(--amber); mix-blend-mode:multiply; transform:translate(2px,-2px); opacity:.55; }
+  .step:nth-child(1){ top:0; left:88px; }
+  .step:nth-child(2){ top:16px; left:72px; }
+  .step:nth-child(3){ top:32px; left:56px; }
+  .step:nth-child(4){ top:48px; left:40px; }
+  .step:nth-child(5){ top:64px; left:24px; }
+  .step:nth-child(6){ top:80px; left:8px; }
+  @media (max-width:900px){ .staircase{ display:none; } }
+
+  /* ---------- HERO CHART PANEL ---------- */
+  .chart-panel{
+    background:var(--panel);
+    border:1px solid var(--grid-line-strong);
+    position:relative;
+    padding:22px 22px 18px;
+  }
+  .corner{ position:absolute; width:14px; height:14px; }
+  .corner.tl{ top:-1px; left:-1px; border-top:2px solid var(--cobalt); border-left:2px solid var(--cobalt); }
+  .corner.tr{ top:-1px; right:-1px; border-top:2px solid var(--cobalt); border-right:2px solid var(--cobalt); }
+  .corner.bl{ bottom:-1px; left:-1px; border-bottom:2px solid var(--cobalt); border-left:2px solid var(--cobalt); }
+  .corner.br{ bottom:-1px; right:-1px; border-bottom:2px solid var(--cobalt); border-right:2px solid var(--cobalt); }
+
+  .chart-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:16px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .chart-head .label{ font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-45); }
+  .chart-head .value{ font-size:26px; font-weight:600; color:var(--cobalt); }
+
+  .toggle-row{ display:flex; gap:6px; margin-bottom:18px; }
+  .toggle{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:7px 11px;
+    border:1px solid var(--grid-line-strong);
+    background:transparent;
+    color:var(--ink-70);
+    cursor:pointer;
+  }
+  .toggle[aria-pressed="true"]{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--cream);
+  }
+
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:6px;
+    height:150px;
+    border-left:1px solid var(--grid-line-strong);
+    border-bottom:1px solid var(--grid-line-strong);
+    padding:0 4px 4px;
+    position:relative;
+  }
+  .bar{
+    flex:1;
+    position:relative;
+    background:var(--cobalt);
+    min-width:4px;
+    transition:height .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .bar::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:var(--amber);
+    opacity:.35;
+    transform:translate(2px,-3px);
+    mix-blend-mode:multiply;
+  }
+  .axis-caption{
+    display:flex; justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--ink-45);
+    margin-top:8px;
+  }
+
+  /* ---------- SECTION LABELS ---------- */
+  .section{ padding:64px 0; }
+  .section-head{ margin-bottom:40px; }
+  .section-head .display{ font-size:clamp(26px,3vw,36px); margin:12px 0 0; }
+
+  /* ---------- METRIC STRIP ---------- */
+  .metric-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border:1px solid var(--grid-line-strong);
+  }
+  .metric-grid > div{
+    padding:26px 22px;
+    border-right:1px solid var(--grid-line-strong);
+  }
+  .metric-grid > div:last-child{ border-right:none; }
+  .metric-num{
+    font-family:'Inter', 'Noto Sans KR', sans-serif;
+    font-weight:800;
+    font-style:normal;
+    font-size:32px;
+    color:var(--title-black);
+    margin-bottom:6px;
+  }
+  .metric-cap{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-45);
+  }
+  @media (max-width:760px){ .metric-grid{ grid-template-columns:repeat(2,1fr); } .metric-grid > div:nth-child(2){ border-right:none; } }
+
+  /* ---------- FEATURES ---------- */
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--grid-line-strong);
+    border:1px solid var(--grid-line-strong);
+  }
+  .feature-card{
+    background:var(--panel);
+    padding:30px 26px;
+    position:relative;
+  }
+  .feature-card .corner{ opacity:0; transition:opacity .18s ease; }
+  .feature-card:hover .corner{ opacity:1; }
+  .feature-card .fnum{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--cobalt);
+    letter-spacing:.06em;
+  }
+  .feature-card h3{
+    font-family:'Inter', 'Noto Sans KR', sans-serif;
+    font-weight:700;
+    font-style:normal;
+    font-size:20px;
+    color:var(--title-black);
+    margin:14px 0 10px;
+  }
+  .feature-card p{
+    font-size:14.5px;
+    line-height:1.6;
+    color:var(--ink-70);
+    margin:0;
+  }
+  @media (max-width:900px){ .feature-grid{ grid-template-columns:1fr; } }
+
+  /* ---------- DEMO ---------- */
+  .demo-panel{
+    background:var(--panel);
+    border:1px solid var(--grid-line-strong);
+    padding:32px;
+    position:relative;
+  }
+  .demo-grid{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:32px;
+  }
+  @media (max-width:760px){ .demo-grid{ grid-template-columns:1fr; } }
+
+  .signal-list{ display:flex; flex-direction:column; gap:2px; }
+  .signal-item{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    padding:10px 12px;
+    border:1px solid transparent;
+    background:transparent;
+    color:var(--ink-70);
+    text-align:left;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .signal-item[aria-pressed="true"]{
+    border-color:var(--grid-line-strong);
+    background:var(--cream);
+    color:var(--ink);
+    font-weight:600;
+  }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--ink-45); }
+  .signal-item[aria-pressed="true"] .dot{ background:var(--cobalt); }
+
+  .readout{ display:flex; flex-direction:column; gap:18px; }
+  .readout-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .readout-title{
+    font-family:'Inter', 'Noto Sans KR', sans-serif;
+    font-weight:700;
+    font-style:normal;
+    font-size:20px;
+    color:var(--title-black);
+  }
+  .readout-status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:4px 9px;
+    border:1px solid var(--grid-line-strong);
+    color:var(--ink-70);
+  }
+  .readout-status.warn{ color:var(--amber); border-color:var(--amber); }
+
+  /* ---------- FOOTER ---------- */
+  footer{ padding:48px 0 64px; }
+  .footer-row{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-45);
+    padding-top:22px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+    html{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">
+      <div class="logo-mark"><span></span><span></span><span></span></div>
+      PULSEGRID
+    </div>
+    <ul class="nav-links">
+      <li><a href="#product">Product</a></li>
+      <li><a href="#signals">Signals</a></li>
+      <li><a href="#demo">Live demo</a></li>
+    </ul>
+    <a href="#demo" class="btn btn-primary">Start monitoring</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="staircase">
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+    <div class="step"><div class="a"></div><div class="b"></div></div>
+  </div>
+
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Real-time signal intelligence</p>
+      <h1 class="display">Every signal,<br>gridded and legible.</h1>
+      <p class="lede">PULSEGRID lays your infrastructure's noise onto a clean coordinate grid — so a spike is never just a spike, it's a point you can name, trace, and act on before it pages you.</p>
+      <div class="hero-ctas">
+        <a href="#demo" class="btn btn-primary">Explore the live panel</a>
+        <a href="#product" class="btn">Read the spec →</a>
+      </div>
+      <div class="hero-meta">
+        <span><b>3.2M</b> signals ingested / day*</span>
+        <span><b>142ms</b> median trace time*</span>
+        <span><b>11</b> regions live*</span>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <div class="chart-head">
+        <span class="label" id="chartLabel">Latency, last 60min*</span>
+        <span class="value" id="chartValue">142ms</span>
+      </div>
+      <div class="toggle-row" role="group" aria-label="Chart metric">
+        <button class="toggle" data-metric="latency" aria-pressed="true">Latency</button>
+        <button class="toggle" data-metric="errors" aria-pressed="false">Errors</button>
+        <button class="toggle" data-metric="throughput" aria-pressed="false">Throughput</button>
+      </div>
+      <div class="bars" id="bars"></div>
+      <div class="axis-caption">
+        <span>–60min</span>
+        <span>–30min</span>
+        <span>now</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<hr class="hairline">
+
+<section class="section wrap" id="product">
+  <div class="metric-grid">
+    <div><div class="metric-num">99.982%</div><div class="metric-cap">Uptime, trailing 90d*</div></div>
+    <div><div class="metric-num">0.4s</div><div class="metric-cap">Mean time to first flag*</div></div>
+    <div><div class="metric-num">214</div><div class="metric-cap">Teams on the grid*</div></div>
+    <div><div class="metric-num">0</div><div class="metric-cap">Blind spots tolerated</div></div>
+  </div>
+</section>
+
+<hr class="hairline">
+
+<section class="section wrap" id="signals">
+  <div class="section-head">
+    <p class="eyebrow">Why gridded</p>
+    <h2 class="display">Built for people who read charts, not summaries.</h2>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="fnum">01 — GRID VIEW</div>
+      <h3>Every metric, one coordinate system</h3>
+      <p>Latency, error rate, and throughput sit on the same axis and the same time window, so a correlation is something you see — not something you compute after the fact.</p>
+    </div>
+    <div class="feature-card">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="fnum">02 — GLITCH ALERTS</div>
+      <h3>Anomalies flag themselves visually</h3>
+      <p>A signal that breaks pattern renders with a visible offset — the same glitch mark across every dashboard, so an on-call engineer recognizes trouble before reading a single number.</p>
+    </div>
+    <div class="feature-card">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="fnum">03 — HAIRLINE PRECISION</div>
+      <h3>Sub-second resolution, no rounding</h3>
+      <p>PULSEGRID keeps raw sample precision all the way to the chart's edge. Nothing is smoothed away before it reaches your screen.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="hairline">
+
+<section class="section wrap" id="demo">
+  <div class="section-head">
+    <p class="eyebrow">Live panel</p>
+    <h2 class="display">Pick a signal, watch it move.</h2>
+  </div>
+
+  <div class="demo-panel">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="demo-grid">
+      <div class="signal-list" role="tablist" aria-label="Signal selector" id="signalList"></div>
+      <div class="readout">
+        <div class="readout-top">
+          <span class="readout-title" id="readoutTitle">checkout-api</span>
+          <span class="readout-status" id="readoutStatus">Nominal</span>
+        </div>
+        <div class="bars" id="demoBars" style="height:180px;"></div>
+        <div class="axis-caption">
+          <span>–60min</span>
+          <span>–30min</span>
+          <span>now</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <hr class="hairline">
+  <div class="footer-row">
+    <span>PULSEGRID · GRID-2026-DEMO</span>
+    <span>* fictional demo data for illustration only</span>
+    <span>Cobalt Grid style demo</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ---- seeded pseudo-random so the demo is stable across reloads ----
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+  }
+
+  function genSeries(seed, base, spread, points){
+    var rnd = mulberry32(seed);
+    var out = [];
+    for(var i=0;i<points;i++){
+      out.push(Math.max(4, base + (rnd()-0.5)*spread));
+    }
+    return out;
+  }
+
+  var METRICS = {
+    latency:   { label:'Latency, last 60min*',    unit:'ms',  series: genSeries(11, 60, 90, 24), current: '142ms' },
+    errors:    { label:'Error rate, last 60min*',  unit:'%',   series: genSeries(22, 20, 60, 24), current: '0.31%' },
+    throughput:{ label:'Throughput, last 60min*',  unit:'r/s', series: genSeries(33, 70, 40, 24), current: '4,180 r/s' }
+  };
+
+  function renderBars(containerId, series){
+    var el = document.getElementById(containerId);
+    el.innerHTML = '';
+    var max = Math.max.apply(null, series);
+    series.forEach(function(v){
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = Math.round((v/max)*100) + '%';
+      el.appendChild(bar);
+    });
+  }
+
+  // hero chart
+  var chartLabel = document.getElementById('chartLabel');
+  var chartValue = document.getElementById('chartValue');
+  var toggles = document.querySelectorAll('.toggle');
+
+  function setMetric(key){
+    var m = METRICS[key];
+    chartLabel.textContent = m.label;
+    chartValue.textContent = m.current;
+    renderBars('bars', m.series);
+    toggles.forEach(function(t){
+      t.setAttribute('aria-pressed', t.dataset.metric === key ? 'true' : 'false');
+    });
+  }
+
+  toggles.forEach(function(t){
+    t.addEventListener('click', function(){ setMetric(t.dataset.metric); });
+  });
+  setMetric('latency');
+
+  // demo signal list
+  var SIGNALS = [
+    { id:'checkout-api', status:'Nominal', seed:41, base:55, spread:50 },
+    { id:'auth-service',  status:'Nominal', seed:52, base:38, spread:30 },
+    { id:'search-index',  status:'Watch',   seed:63, base:90, spread:120 },
+    { id:'billing-worker',status:'Nominal', seed:74, base:22, spread:20 },
+    { id:'event-bus',     status:'Nominal', seed:85, base:48, spread:40 }
+  ];
+
+  var listEl = document.getElementById('signalList');
+  SIGNALS.forEach(function(sig, i){
+    var btn = document.createElement('button');
+    btn.className = 'signal-item';
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-pressed', i===0 ? 'true':'false');
+    btn.dataset.id = sig.id;
+    btn.innerHTML = '<span>'+sig.id+'</span><span class="dot"></span>';
+    btn.addEventListener('click', function(){ selectSignal(sig.id); });
+    listEl.appendChild(btn);
+  });
+
+  function selectSignal(id){
+    var sig = SIGNALS.find(function(s){ return s.id === id; });
+    document.querySelectorAll('.signal-item').forEach(function(b){
+      b.setAttribute('aria-pressed', b.dataset.id === id ? 'true':'false');
+    });
+    document.getElementById('readoutTitle').textContent = sig.id;
+    var statusEl = document.getElementById('readoutStatus');
+    statusEl.textContent = sig.status;
+    statusEl.className = 'readout-status' + (sig.status === 'Watch' ? ' warn' : '');
+    renderBars('demoBars', genSeries(sig.seed, sig.base, sig.spread, 24));
+  }
+
+  selectSignal('checkout-api');
+})();
+</script>
+
+</body>
+</html>

@@ -1378,6 +1378,46 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderLiveForecast(rawData, trades, forecast) {
     if (!rawData || rawData.length === 0 || !forecast) return;
 
+    // 0. Update Stock Current Price & Daily Change Badge
+    const stockCurrPrice = document.getElementById('stockCurrPrice');
+    const stockPriceChange = document.getElementById('stockPriceChange');
+    const stockChangeIcon = document.getElementById('stockChangeIcon');
+    const stockChangeDiff = document.getElementById('stockChangeDiff');
+    const stockChangePct = document.getElementById('stockChangePct');
+
+    if (rawData && rawData.length > 0) {
+      const n = rawData.length;
+      const lastItem = rawData[n - 1];
+      const prevItem = n >= 2 ? rawData[n - 2] : rawData[n - 1];
+      const currentPrice = lastItem.close;
+      const prevPrice = prevItem ? prevItem.close : currentPrice;
+      const diff = currentPrice - prevPrice;
+      const diffPct = prevPrice > 0 ? (diff / prevPrice) * 100 : 0;
+
+      if (stockCurrPrice) {
+        stockCurrPrice.textContent = `₩ ${Math.round(currentPrice).toLocaleString('ko-KR')}`;
+      }
+
+      if (stockPriceChange && stockChangeIcon && stockChangeDiff && stockChangePct) {
+        if (diff > 0) {
+          stockPriceChange.className = 'stock-price-change is-up';
+          stockChangeIcon.className = 'fa-solid fa-arrow-up';
+          stockChangeDiff.textContent = `▲ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')}`;
+          stockChangePct.textContent = `(+${diffPct.toFixed(2)}%)`;
+        } else if (diff < 0) {
+          stockPriceChange.className = 'stock-price-change is-down';
+          stockChangeIcon.className = 'fa-solid fa-arrow-down';
+          stockChangeDiff.textContent = `▼ ${Math.round(Math.abs(diff)).toLocaleString('ko-KR')}`;
+          stockChangePct.textContent = `(${diffPct.toFixed(2)}%)`;
+        } else {
+          stockPriceChange.className = 'stock-price-change is-flat';
+          stockChangeIcon.className = 'fa-solid fa-minus';
+          stockChangeDiff.textContent = '0';
+          stockChangePct.textContent = '(0.00%)';
+        }
+      }
+    }
+
     const forecastProbBadge = document.getElementById('forecastProbBadge');
     const forecastProbVal = document.getElementById('forecastProbVal');
     const forecastProbLevel = document.getElementById('forecastProbLevel');

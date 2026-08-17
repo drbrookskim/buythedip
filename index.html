@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=20260817_2249">
+  <link rel="stylesheet" href="style.css?v=20260817_2256">
 </head>
 <body>
   <div class="app-container">
@@ -120,6 +120,16 @@
             <h3 class="section-title">
               <i class="fa-solid fa-bolt-lightning text-primary"></i> Jump from the Dip Strategy
             </h3>
+            <!-- Real-time Current Stock Price & Daily Change Badge (전일 대비 현재가 및 변동률) -->
+            <div class="stock-current-price-badge" id="stockCurrentPriceBadge">
+              <span class="stock-curr-label">현재가</span>
+              <span class="stock-curr-price" id="stockCurrPrice">₩ 0</span>
+              <span class="stock-price-change is-up" id="stockPriceChange">
+                <i class="fa-solid fa-arrow-up" id="stockChangeIcon"></i>
+                <span id="stockChangeDiff">0</span>
+                <span id="stockChangePct">(+0.00%)</span>
+              </span>
+            </div>
           </div>
           <div class="jftd-header-actions">
             <div class="forecast-prob-badge" id="forecastProbBadge">
@@ -533,6 +543,6 @@
 
   </div>
 
-  <script src="app.js?v=20260817_2249"></script>
+  <script src="app.js?v=20260817_2256"></script>
 </body>
 </html>

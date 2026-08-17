@@ -154,10 +154,10 @@ body {
 .logo-mark span:nth-child(3) { width: 8px; height: 8px; left: 14px; top: 0; background: var(--ink-strong); }
 
 .logo-text h1 {
-  font-family: var(--font-title);
-  font-size: 19px;
+  font-family: 'Space Grotesk', var(--font-title), sans-serif;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -166,8 +166,9 @@ body {
 }
 
 .logo-text .brand-sub {
+  font-family: 'Space Grotesk', var(--font-title), sans-serif;
   color: var(--primary);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Voltagent Pill Tag Badge */

@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=20260817_2338">
+  <link rel="stylesheet" href="style.css?v=20260817_2344">
 </head>
 <body>
   <div class="app-container">
@@ -307,8 +307,16 @@
           <div style="display: none;">
             <input type="number" id="takeProfit" value="6.0">
             <input type="number" id="stopLoss" value="3.0">
-            <select id="trendMa"><option value="60" selected>60</option></select>
-            <select id="dipType"><option value="ma20_rsi" selected>ma20_rsi</option></select>
+            <select id="trendMa">
+              <option value="0">0</option>
+              <option value="60" selected>60</option>
+              <option value="120">120</option>
+            </select>
+            <select id="dipType">
+              <option value="ma20_rsi" selected>ma20_rsi</option>
+              <option value="bollinger_lower">bollinger_lower</option>
+              <option value="drop_pct">drop_pct</option>
+            </select>
             <input type="range" id="rsiThreshold" value="45"><span id="rsiVal">45</span>
             <input type="checkbox" id="useTrailingStop" checked>
             <input type="range" id="trailingPct" value="3.0"><span id="trailingVal">3.0</span>
@@ -540,6 +548,6 @@
 
   </div>
 
-  <script src="app.js?v=20260817_2338"></script>
+  <script src="app.js?v=20260817_2344"></script>
 </body>
 </html>

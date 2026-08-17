@@ -982,19 +982,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Trend Filter check
       let trendOk = true;
-      if (trendMaPeriod === 60 && bar.sma60) trendOk = bar.close >= bar.sma60;
-      if (trendMaPeriod === 120 && bar.sma120) trendOk = bar.close >= bar.sma120;
+      if (trendMaPeriod === 60) {
+        trendOk = bar.sma60 ? bar.close >= bar.sma60 : true;
+      } else if (trendMaPeriod === 120) {
+        trendOk = bar.sma120 ? bar.close >= bar.sma120 : (bar.sma60 ? bar.close >= bar.sma60 : true);
+      }
 
       // Dip Condition check
       let dipOk = false;
       if (trendOk && bar.rsi) {
-        if (dipType === 'ma20_rsi' && bar.sma20) {
-          dipOk = (bar.close <= bar.sma20 * 1.005) && (bar.rsi <= rsiLimit);
-        } else if (dipType === 'bollinger_lower' && bar.bollingerLower) {
-          dipOk = bar.close <= bar.bollingerLower * 1.01;
+        if (dipType === 'ma20_rsi') {
+          dipOk = (bar.close <= (bar.sma20 || bar.close) * 1.01) && (bar.rsi <= rsiLimit);
+        } else if (dipType === 'bollinger_lower') {
+          dipOk = bar.bollingerLower ? bar.close <= bar.bollingerLower * 1.01 : bar.rsi <= rsiLimit;
         } else if (dipType === 'drop_pct') {
-          const recentMax = Math.max(rawData[Math.max(0, i - 3)].close, rawData[Math.max(0, i - 1)].close);
-          dipOk = (bar.close <= recentMax * 0.96) && (bar.rsi <= rsiLimit + 5);
+          const lookback = Math.min(5, i);
+          const recentMax = Math.max(...rawData.slice(i - lookback, i).map(d => d.close));
+          dipOk = (bar.close <= recentMax * 0.975) && (bar.rsi <= (rsiLimit || 50));
         }
       }
 
@@ -1097,9 +1101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCharts(rawData, buyHoldEquity, equityCurve, buyMarkers, tpMarkers, slMarkers, tsMarkers, tcMarkers, symbol, numDays, forecast);
   }
 
-  // -------------------------------------------------------------
-  // Dynamic Multi-Dimensional Tactical Commentary Generator
-  // -------------------------------------------------------------
   // -------------------------------------------------------------
   // Dynamic Multi-Dimensional Tactical Commentary Generator
   // -------------------------------------------------------------

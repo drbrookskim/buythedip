@@ -365,6 +365,12 @@
   - 모달 팝업이 열릴 때(`openEquityModal`)와 종목/전략 변경 시 캔버스 렌더러가 현재 종목의 일별 시세와 백테스트 잔고 곡선을 0ms 즉시 정확한 캔버스 크기로 반응형 렌더링.
   - 툴팁 마우스 오버 시 날짜별 전략 잔고, 단순 보유 잔고, 누적 수익률을 원화 및 퍼센트로 완벽 포맷팅.
 
+### 53. GitHub 원격 저장소(`drbrookskim/buythedip`) 연결 및 최초 릴리즈 Publish 완료 (2026-08-17)
+- **GitHub 원격 연동 및 푸시 완료**:
+  - 원격 리포지토리: `https://github.com/drbrookskim/buythedip.git` (`origin/main`)
+  - `.gitignore` (OS 캐시 및 Python 임시 파일 제외) 및 상세 기술 문서 `README.md` 작성 완료.
+  - 전 소스코드 (`index.html`, `style.css`, `app.js`, `server.py`, `krx_stocks.json`, `GEMINI.md`, `memory.md` 등) 16개 파일 커밋 및 `main` 브랜치 원격 푸시 성공.
+
 ---
 
 ## 📝 2026-08-09 주요 작업 내역
